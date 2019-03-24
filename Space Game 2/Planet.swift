@@ -13,17 +13,17 @@ import SpriteKit
 
 class Planet: SKShapeNode {
     var radius: Double!
-    var currentPlanet: Bool!
-    var x: Int64!
-    var y: Int64!
-    var z: Int64!
+    var startingPlanet: Bool!
+    var x: Int!
+    var y: Int!
+    var z: Int!
     
     
     
-    init(name: String, radius: Double, currentPlanet: Bool, x: Int64, y: Int64, z: Int64) {
+    init(name: String, radius: Double, startingPlanet: Bool, x: Int, y: Int, z: Int) {
         
         self.radius = radius
-        self.currentPlanet = currentPlanet
+        self.startingPlanet = startingPlanet
         
         super.init()
         
@@ -32,6 +32,9 @@ class Planet: SKShapeNode {
         self.strokeColor = UIColor.white
         self.name = name
         
+        self.x = x
+        self.y = y
+        self.z = z
 
         //self.position = getCoordinates(filename: self.name!, dateString: dateFormatter.string(from: Date()))
     }

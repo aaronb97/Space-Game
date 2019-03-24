@@ -8,5 +8,7 @@ target 'Space Game 2' do
   # Pods for Space Game 2
   pod 'Firebase/Core'
   pod 'Firebase/Database'
+  pod 'Firebase/Auth'
+  pod 'GoogleSignIn'
 
 end

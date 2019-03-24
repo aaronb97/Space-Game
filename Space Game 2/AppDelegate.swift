@@ -8,9 +8,38 @@
 
 import UIKit
 import Firebase
+import GoogleSignIn
+import GameplayKit
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
+    
+    func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
+        guard let authentication = user.authentication else { return }
+        let credential = GoogleAuthProvider.credential(withIDToken: authentication.idToken,
+                                                       accessToken: authentication.accessToken)
+        
+        Auth.auth().signInAndRetrieveData(with: credential) { (authResult, error) in
+            if let error = error {
+                print(error.localizedDescription)
+                return
+            }
+            print("signed in")
+            self.window?.rootViewController?.view = SKView()
+            
+            if let view = self.window?.rootViewController?.view as! SKView? {
+                
+                let scene = GameScene(size: view.bounds.size)
+                scene.scaleMode = .aspectFill
+                view.presentScene(scene)
+                
+                
+                view.ignoresSiblingOrder = true
+                view.showsFPS = true
+                view.showsNodeCount = true
+            }
+        }
+    }
 
     var window: UIWindow?
     var username: String!
@@ -18,10 +47,28 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         FirebaseApp.configure()
-        username =  UserDefaults.standard.value(forKey: "username") as? String
         
-        print(username)
+        GIDSignIn.sharedInstance().clientID = FirebaseApp.app()?.options.clientID
+        GIDSignIn.sharedInstance().delegate = self
+        
+        
+        let signInViewController: SignInViewController = SignInViewController()
+        
+        self.window = UIWindow(frame: UIScreen.main.bounds)
+        self.window!.rootViewController = signInViewController
+        self.window!.backgroundColor = UIColor.black
+        self.window!.makeKeyAndVisible()
+        
+        
         return true
+    }
+    
+    @available(iOS 9.0, *)
+    func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any])
+        -> Bool {
+            return GIDSignIn.sharedInstance().handle(url,
+                                                     sourceApplication:options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
+                                                     annotation: [:])
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -59,18 +106,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        //GIDSignIn.sharedInstance().signOut()
     }
 
-    func setUsername(_ username: String)
-    {
-        self.username = username
-        UserDefaults.standard.setValue(username, forKey: "username")
-    }
-    
-    func getUsername() -> String! {
-        return self.username
-    }
-
+   
 }
 
