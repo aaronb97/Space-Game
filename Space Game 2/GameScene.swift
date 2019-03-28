@@ -11,8 +11,51 @@ import GameplayKit
 import Firebase
 import FirebaseDatabase
 
-class GameScene: SKScene, UITextFieldDelegate {
+class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
     
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return planets.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
+        if cell == nil {
+            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
+        }
+        
+        cell!.textLabel?.text = self.planets[indexPath.row].name
+        if (self.planets[indexPath.row] == currentPlanet)
+        {
+            cell!.textLabel?.textColor = UIColor.gray
+            cell!.detailTextLabel?.text = "You are here"
+            cell!.detailTextLabel?.textColor = UIColor.gray
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
+        }
+        else if (self.planets[indexPath.row] == travelingTo)
+        {
+            cell!.textLabel?.textColor = UIColor.gray
+            cell!.detailTextLabel?.text = "You are already traveling to this planet"
+            cell!.detailTextLabel?.textColor = UIColor.gray
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
+        }
+        else
+        {
+            cell!.textLabel?.textColor = UIColor.black
+            cell!.detailTextLabel?.textColor = UIColor.black
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.default
+            cell!.detailTextLabel?.text = ""
+            //cell!.detailTextLabel?.text = "Distance: \(String(describing: GameScene.formatDistance(self.planets[indexPath.row].distance! * Planet.AUDivider)))"
+        }
+        return cell!
+    }
+    
+    var xPositionLabel: UILabel!
+    var yPositionLabel: UILabel!
+    var zPositionLabel: UILabel!
+    var xVelocityLabel: UILabel!
+    var yVelocityLabel: UILabel!
+    var zVelocityLabel: UILabel!
+
     var ref: DatabaseReference!
     
     var username: String!
@@ -27,21 +70,51 @@ class GameScene: SKScene, UITextFieldDelegate {
     
     var dateString : String!
     
-    var rocketX : Int!
-    var rocketY : Int!
-    var rocketZ : Int!
+    var positionX : Int!
+    var positionY : Int!
+    var positionZ : Int!
+    var velocityX : Double?
+    var velocityY : Double?
+    var velocityZ : Double?
+    var baseVelocty : Int!
     var rocket : SKSpriteNode!
+    var coordinatesSet = false
     
     var planets : [Planet]!
     var planetList : [String]!
     
     var sceneCam: SKCameraNode!
     
+    var planetListTableView : UITableView!
+
+    var setACourseButton: UIButton!
+    var goButton: UIButton!
+    var speedLabel: UILabel!
+    
+    var planetSelection: Planet!
+    var travelingTo: Planet!
+    var currentPlanet : Planet!
+    
     let coordMultiplier = 100.0
     let AU = 149597871.0
+    let framesPerHour : Double = 1 / 216000
+    let millisecondsPerHour : Double = 1 / 3600000
+    let secondsPerHour : Double = 1 / 3600
     
+    var email: String!
+    var timestamp : Int!
+    
+    var pushTimer: Timer!
+    var localTime: TimeInterval!
     
     override func didMove(to view: SKView) {
+        
+        xPositionLabel = UILabel()
+        yPositionLabel = UILabel()
+        zPositionLabel = UILabel()
+        xVelocityLabel = UILabel()
+        yVelocityLabel = UILabel()
+        zVelocityLabel = UILabel()
         
         sceneCam = SKCameraNode()
         camera = sceneCam
@@ -50,8 +123,9 @@ class GameScene: SKScene, UITextFieldDelegate {
         self.view?.addGestureRecognizer(pinch)
         
         ref = Database.database().reference()
+        email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
         
-        ref.child("users").child((Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ","))!).observeSingleEvent(of: .value, with: {
+        ref.child("users").child(email).observeSingleEvent(of: .value, with: {
             snap in
                 if (!snap.exists())
                 {
@@ -62,10 +136,136 @@ class GameScene: SKScene, UITextFieldDelegate {
                     self.loadPlanetlistDatePlanets()
 
                 }
-            
         })
         
+        planetListTableView = UITableView(frame: CGRect(x:20, y: 20 , width: self.view!.frame.width - 40, height: self.view!.frame.height / 1.5))
+        self.scene?.view?.addSubview(planetListTableView)
+        planetListTableView.delegate = self
+        planetListTableView.dataSource = self
+        planetListTableView.isHidden = true
+        
+        setACourseButton = UIButton()
+        setACourseButton.setTitle("Set a Course", for: .normal)
+        let setACourseButtonWidth = 130.0
+        setACourseButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(setACourseButtonWidth / 2), y: self.view!.frame.height / 4, width: CGFloat(setACourseButtonWidth), height: CGFloat(30.0))
+        formatButton(setACourseButton)
+        
+        goButton = UIButton()
+        goButton.setTitle("Go!", for: .normal)
+        let goButtonWidth = 150
+        goButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(goButtonWidth / 2), y: planetListTableView.frame.maxY + 20, width: CGFloat(goButtonWidth), height: CGFloat(30.0))
+        formatButton(goButton)
+        goButton.isHidden = true
+        
+        let speedLabelWidth = 250
+        speedLabel = UILabel()
+        speedLabel.frame = CGRect(x: (self.view?.center.x)! - CGFloat(speedLabelWidth / 2), y: planetListTableView.frame.maxY + 10, width: CGFloat(speedLabelWidth), height: CGFloat(30.0))
+        speedLabel.textColor = UIColor.white
+        speedLabel.font = UIFont(name: "Courier", size: 13)
+        
+        
+        
+        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        zVelocityLabel.frame = CGRect(x: 0, y: yVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        
+        formatNumberLabel(xPositionLabel)
+        formatNumberLabel(yPositionLabel)
+        formatNumberLabel(zPositionLabel)
+        formatNumberLabel(xVelocityLabel)
+        formatNumberLabel(yVelocityLabel)
+        formatNumberLabel(zVelocityLabel)
 
+        self.view?.addSubview(xPositionLabel)
+        self.view?.addSubview(yPositionLabel)
+        self.view?.addSubview(zPositionLabel)
+        self.view?.addSubview(xVelocityLabel)
+        self.view?.addSubview(yVelocityLabel)
+        self.view?.addSubview(zVelocityLabel)
+
+        velocityX = 0.0
+        velocityY = 0.0
+        velocityZ = 0.0
+        baseVelocty = 50000
+        planets = [Planet]()
+
+        localTime = Date().timeIntervalSinceReferenceDate
+        
+        ref.child("timestamp").observe(.value, with: {
+            snap in
+                self.timestamp = snap.value as? Int
+            print("timestamp set: \(self.timestamp)")
+        })
+    }
+    
+    func formatNumberLabel(_ label: UILabel)
+    {
+        label.textColor = UIColor.white
+        label.font = UIFont(name: "Courier", size: 15)
+    }
+    
+    
+    func formatButton(_ button: UIButton)
+    {
+        button.setTitleColor(UIColor.white, for: .normal)
+        button.tintColor = UIColor.black
+        button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
+        button.backgroundColor = UIColor(white: 1, alpha: 0.1)
+        button.layer.cornerRadius = 10
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.white.cgColor
+    }
+    
+    @objc func buttonPressed(sender: UIButton)
+    {
+        if (sender == setACourseButton)
+        {
+            setACourseButton.isHidden = true
+            planetListTableView.isHidden = false
+            planetListTableView.reloadData()
+        }
+        else if (sender == goButton)
+        {
+            goButton.isHidden = true
+            planetListTableView.isHidden = true
+            travelingTo = planetSelection
+            planetSelection = nil
+            currentPlanet = nil
+            
+            calculateVelocities()
+            
+            setACourseButton.isHidden = false
+        }
+    }
+    
+    func calculateVelocities()
+    {
+        let phi = angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
+        let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingTo.position.x, y2: travelingTo.position.y)
+        rocket.zRotation = theta - .pi / 2
+        
+        velocityX = Double(cos(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
+        velocityY = Double(sin(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
+        velocityZ = Double(sin(phi) * CGFloat(baseVelocty)) * coordMultiplier
+    }
+    
+    func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
+    {
+        return atan2(y2 - y1, x2 - x1)
+    }
+    
+    func tableView(_ tableView: UITableView,
+                   didSelectRowAt indexPath: IndexPath) {
+        if (!(planets[indexPath.row] == currentPlanet))
+        {
+            planetSelection = planets[indexPath.row]
+            goButton.isHidden = false
+            goButton.setTitle("Go to \(planets[indexPath.row].name!)", for: .normal)
+        }
+        
     }
     
     @objc func pinchRecognized(sender: UIPinchGestureRecognizer) {
@@ -109,7 +309,11 @@ class GameScene: SKScene, UITextFieldDelegate {
         loadDate(group)
         
         group.notify(queue: .main) {
-            self.loadPlanets()
+            self.loadPlanets({
+                self.getPositionFromServer()
+                self.addGameViews()
+
+            })
         }
     }
     
@@ -149,9 +353,8 @@ class GameScene: SKScene, UITextFieldDelegate {
                 {                   //username doesn't exist
                     textField.resignFirstResponder()
                     self.username = textField.text
-                    self.ref.child("nicknames").child(self.username).setValue(true)
-                    self.ref.child("users").child((Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ","))!).setValue(["position": ["x": 0, "y": 0, "z": 0, "timeUpdated": 0]])
-                    self.ref.child("users").child((Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ","))!).child("nickname").setValue(textField.text!)
+                    self.ref.child("nicknames/\(self.username!)").setValue(true)
+                    self.ref.child("users/\(self.email!)/nickname").setValue(textField.text!)
 
                     self.nicknameCleanup()
                     self.loadPlanetlistDatePlanets()
@@ -219,30 +422,49 @@ class GameScene: SKScene, UITextFieldDelegate {
                 view.removeFromSuperview()
             }
         }
+        
+    }
+    
+    func addGameViews()
+    {
+        self.view?.addSubview(setACourseButton)
+        self.view?.addSubview(goButton)
+        self.view?.addSubview(speedLabel)
+        
+        startPushTimer()
+    }
+    
+    func startPushTimer()
+    {
+        pushTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(pushPositionToServer), userInfo: nil, repeats: true)
     }
     
     func loadDate(_ group: DispatchGroup )
     {
-        planets = [Planet]()
-        ref.child("timestamp").setValue(ServerValue.timestamp())
-        
         var date : NSDate!
         
-        ref.child("timestamp").observeSingleEvent(of: .value, with: {
-            snap in
-            if let t = snap.value as? TimeInterval {
-                // Cast the value to an NSTimeInterval
-                // and divide by 1000 to get seconds.
-                date = NSDate(timeIntervalSince1970: t/1000)
+        ref.child("timestamp").setValue(ServerValue.timestamp(), withCompletionBlock: { (error, snapshot) in
+            self.ref.child("timestamp").observeSingleEvent(of: .value, with: {
+                snap in
+                if let t = snap.value as? TimeInterval {
+                    
+                    self.timestamp = snap.value as? Int
+                    print("server timestamp: \(self.timestamp!)")
+                    date = NSDate(timeIntervalSince1970: t/1000)
+                    
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "yyyy-M-dd"
+                    self.dateString = dateFormatter.string(from: date as Date)
+                }
                 
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-M-dd"
-                self.dateString = dateFormatter.string(from: date as Date)
-            }
-
-            group.leave()
-            print("date loaded")
+                group.leave()
+                print("date loaded")
+            })
         })
+        
+        
+        
+        
     }
     
     func loadPlanetList( _ group: DispatchGroup)
@@ -255,14 +477,13 @@ class GameScene: SKScene, UITextFieldDelegate {
         })
     }
     
-    func loadPlanets()
+    func loadPlanets( _ callback: @escaping () -> () )
     {
         let group = DispatchGroup()
         
         for planetString in self.planetList
         {
             group.enter()
-        
             ref.child("planets").child(planetString).child("positions").child(dateString).observeSingleEvent(of: .value, with: {
                 snap in
                 let coordDict = snap.value as! [String: String]
@@ -271,8 +492,6 @@ class GameScene: SKScene, UITextFieldDelegate {
                     
                     let valueDict = snap2.value as! [String: Any]
                     
-                    //print(Int(Double(coordDict["x"]!)! * self.coordMultiplier * self.AU))
-                    //print(Int(Double(coordDict["y"]!)! * self.coordMultiplier * self.AU))
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
@@ -280,6 +499,10 @@ class GameScene: SKScene, UITextFieldDelegate {
                                             y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * self.AU),
                                             z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * self.AU))
                     self.planets.append(planet)
+                    if (planet.startingPlanet == true)
+                    {
+                        self.currentPlanet = planet
+                    }
                     print("loaded planet \(planet.name!)")
                     group.leave()
                 })
@@ -290,7 +513,13 @@ class GameScene: SKScene, UITextFieldDelegate {
         
         group.notify(queue: .main) {
             self.drawObjects()
+            callback()
         }
+    }
+    
+    func drawPlanet(_ planet: Planet)
+    {
+        
     }
     
     func drawObjects()
@@ -312,9 +541,13 @@ class GameScene: SKScene, UITextFieldDelegate {
                 
                 self.addChild(planet)
                 
-                rocketX = planet.x
-                rocketY = planet.y + Int(planet.radius)
-                rocketZ = planet.z
+                if (!coordinatesSet)
+                {
+                    coordinatesSet = true
+                    positionX = planet.x
+                    positionY = (planet.y + Int(planet.radius) * Int(coordMultiplier))
+                    positionZ = planet.z
+                }
             }
         }
         
@@ -323,12 +556,8 @@ class GameScene: SKScene, UITextFieldDelegate {
             if (planet.startingPlanet == false)
             {
                 planet.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -planet.radius / 2, y: 0.0), size: CGSize(width: planet.radius, height: planet.radius)), transform: nil)
-                print(planet.x)
-                print(planet.y)
-                planet.position = CGPoint(x: Double(planet.x - rocketX) / coordMultiplier, y: Double(planet.y - rocketY) / coordMultiplier)
-                
+                planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
                 planet.fillColor = UIColor.white
-                
                 self.addChild(planet)
             }
         }
@@ -337,10 +566,135 @@ class GameScene: SKScene, UITextFieldDelegate {
     override func sceneDidLoad() {
 
     }
+    
+//    func getCoordinateData() -> [String: Any]
+//    {
+//        var dict = [String: Any]()
+//        dict["positionX"] = positionX
+//        dict["positionY"] = positionY
+//        dict["positionZ"] = positionZ
+//        dict["velocityX"] = velocityX
+//        dict["velocityY"] = velocityY
+//        dict["velocityZ"] = velocityZ
+//
+//        return dict
+//    }
+    
+    
+    
+    @objc func pushPositionToServer()
+    {
+        //let dict = getCoordinateData()
+        let travelingToName = travelingTo != nil ? travelingTo.name : "nil"
+        
+        ref.child("users/\(email!)/position").setValue(
+            ["positionX" : positionX,
+             "positionY" : positionY,
+             "positionZ" : positionZ,
+             "velocityX" : velocityX!,
+             "velocityY" : velocityY!,
+             "velocityZ" : velocityZ!,
+             "timestamp": ServerValue.timestamp(),
+             "travelingTo" : travelingToName!])
+        
+        //ref.child("timestamp").setValue(ServerValue.timestamp())
+    }
+    
+    
+    
+    func getPositionFromServer()
+    {
+
+        ref.child("users/\(email!)/position").observeSingleEvent(of: .value, with: {
+            snap in
+            
+            if (snap.exists())
+            {
+                let coordDict = snap.value as! [String: Any]
+                
+                self.positionX = coordDict["positionX"] as? Int
+                self.positionY = coordDict["positionY"] as? Int
+                self.positionZ = coordDict["positionZ"] as? Int
+                self.velocityX = coordDict["velocityX"] as? Double
+                self.velocityY = coordDict["velocityY"] as? Double
+                self.velocityZ = coordDict["velocityZ"] as? Double
+                self.travelingTo = self.planetWithName((coordDict["travelingTo"] as? String)!)
+                self.coordinatesSet = true
+                let oldTimestamp = coordDict["timestamp"] as! Int
+                print("old timestamp: \(oldTimestamp)")
+                if (self.travelingTo != nil)
+                {
+                    self.currentPlanet = nil
+                }
+                let millisecondsElapsed = self.timestamp - oldTimestamp
+                print("\(millisecondsElapsed) milliseconds since last load")
+
+                print("x change: \(Int(self.velocityX! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
+                print("y change: \(Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
+                print("z change: \(Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
+                
+                print(self.positionX!)
+                
+                self.positionX += Int(self.velocityX! * self.millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionY += Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionZ += Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed))
+                
+            }
+
+        })
+    }
+    
+    func planetWithName(_ name: String) -> Planet!
+    {
+        for planet in planets
+        {
+            if (planet.name == name)
+            {
+                return planet
+            }
+        }
+        return nil
+    }
 
     override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+        
+        let newTime = Date().timeIntervalSinceReferenceDate
+        let timeDiff = newTime - localTime
+        localTime = newTime
+        print(timeDiff)
         
         
+        
+        if (travelingTo != nil)
+        {
+            
+//            positionX += Int(velocityX! * framesPerHour)
+//            positionY += Int(velocityY! * framesPerHour)
+//            positionZ += Int(velocityZ! * framesPerHour)
+            
+            positionX += Int(velocityX! * secondsPerHour * timeDiff)
+            positionY += Int(velocityY! * secondsPerHour * timeDiff)
+            positionZ += Int(velocityZ! * secondsPerHour * timeDiff)
+            
+            for planet in planets
+            {
+                planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
+            }
+            
+            
+            
+            xPositionLabel.text = "x position: \(positionX!)"
+            yPositionLabel.text = "y position: \(positionY!)"
+            zPositionLabel.text = "z position: \(positionZ!)"
+            xVelocityLabel.text = "x velocity: \(velocityX!)"
+            yVelocityLabel.text = "y velocity: \(velocityY!)"
+            zVelocityLabel.text = "z velocity: \(velocityZ!)"
+
+            //if (currentTime.truncatingRemainder(dividingBy: 60) == 0)
+            //{
+            //    print("calculated velocities")
+                calculateVelocities()
+            //}
+        }
     }
 }

@@ -1,5 +1,5 @@
 import csv, io, json 
-with open("/Users/aaronbecker/Desktop/horizons_results.txt","r") as source:
+with open("horizons_results.txt","r") as source:
     data = source.read()
     data = data.replace("A.D.", "")
     data = data.replace("00:00:00.0000", "")
@@ -25,7 +25,7 @@ with open("/Users/aaronbecker/Desktop/horizons_results.txt","r") as source:
     data5 = n.join(res)
     data5 = data5.strip()
     rdr= csv.reader(io.StringIO(data5) )
-    with open("/Users/aaronbecker/Desktop/converted.txt","w") as result:
+    with open("converted.txt","w") as result:
         result.write("date,x,y,z\n")
         wtr= csv.writer( result )
         for r in rdr:
@@ -33,9 +33,9 @@ with open("/Users/aaronbecker/Desktop/horizons_results.txt","r") as source:
         result.close()
 
 
-    with open("/Users/aaronbecker/Desktop/converted.txt","r") as f:
+    with open("converted.txt","r") as f:
         reader = csv.DictReader(f)
-        with open("/Users/aaronbecker/Desktop/converted.json","w") as result:
+        with open("converted.json","w") as result:
             result.write('{\n"positions": {')
             for row in reader:
 #json.dump(row['date'] : {'x' : row['x'], "y" : row['y'], "z" : row['z']}, result)
@@ -54,12 +54,12 @@ with open("/Users/aaronbecker/Desktop/horizons_results.txt","r") as source:
             result.write('}}')
 
 
-    f = open("/Users/aaronbecker/Desktop/converted.json","r") 
+    f = open("converted.json","r") 
     filestring = f.read()
     f.close()
 
     newfilestring = filestring.replace(",\n}", "}")
-    f = open("/Users/aaronbecker/Desktop/converted.json","w") 
+    f = open("converted.json","w") 
     f.write(newfilestring)
     f.close()
 
