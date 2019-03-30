@@ -125,7 +125,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             group.enter()
             scene.loadDate(group)
             group.notify(queue: .main) {
-                scene.getPositionFromServer()
+                scene.getPositionFromServer(nil)
                 scene.startPushTimer()
             }
             

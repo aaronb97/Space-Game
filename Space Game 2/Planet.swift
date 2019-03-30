@@ -27,7 +27,7 @@ class Planet: SKShapeNode {
         
         super.init()
         
-        self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius / 2, y: 0.0), size: CGSize(width: radius, height: radius)), transform: nil)
+        self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius / 2, y: -radius / 2), size: CGSize(width: radius, height: radius)), transform: nil)
         
         self.strokeColor = UIColor.white
         self.name = name

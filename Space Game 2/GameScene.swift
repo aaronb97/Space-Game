@@ -79,6 +79,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var baseVelocty : Int!
     var rocket : SKSpriteNode!
     var coordinatesSet = false
+    var travelingToName: String!
+    var currentPlanetName: String!
     
     var planets : [Planet]!
     var planetList : [String]!
@@ -103,6 +105,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     var email: String!
     var timestamp : Int!
+    
     
     var pushTimer: Timer!
     var localTime: TimeInterval!
@@ -164,13 +167,13 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         speedLabel.font = UIFont(name: "Courier", size: 13)
         
         
-        
-        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(30.0))
-        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
-        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
-        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
-        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
-        zVelocityLabel.frame = CGRect(x: 0, y: yVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(30.0))
+        let labelHeight = 15.0
+        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        zVelocityLabel.frame = CGRect(x: 0, y: yVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
         
         formatNumberLabel(xPositionLabel)
         formatNumberLabel(yPositionLabel)
@@ -197,14 +200,14 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         ref.child("timestamp").observe(.value, with: {
             snap in
                 self.timestamp = snap.value as? Int
-            print("timestamp set: \(self.timestamp)")
+            print("timestamp set: \(self.timestamp!)")
         })
     }
     
     func formatNumberLabel(_ label: UILabel)
     {
         label.textColor = UIColor.white
-        label.font = UIFont(name: "Courier", size: 15)
+        label.font = UIFont(name: "Courier", size: 13)
     }
     
     
@@ -243,14 +246,39 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     func calculateVelocities()
     {
-        let phi = angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
-        let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingTo.position.x, y2: travelingTo.position.y)
-        rocket.zRotation = theta - .pi / 2
+        let Bx = rocket.position.x
+        let By = rocket.position.y
+        let Ax = travelingTo.position.x
+        let Ay = travelingTo.position.y
+        let r = travelingTo.radius
+        let denom = sqrt(pow(Bx - Ax, 2) + pow(By - Ay, 2))
+        let travelingToPointx = Ax + CGFloat(r!) * (Bx - Ax) / denom
+        let travelingToPointy = Ay + CGFloat(r!) * (By - Ay) / denom
         
-        velocityX = Double(cos(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
-        velocityY = Double(sin(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
-        velocityZ = Double(sin(phi) * CGFloat(baseVelocty)) * coordMultiplier
+        print("\(travelingToPointx) \(travelingToPointy)")
+        
+        if (abs(travelingToPointx) < 1 && abs(travelingToPointy) < 1)
+        {
+            velocityX = 0
+            velocityY = 0
+            velocityZ = 0
+            currentPlanet = travelingTo
+            travelingTo = nil
+            rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
+        }
+        else
+        {
+        
+            let phi = angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
+            let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingToPointx, y2: travelingToPointy)
+            rocket.zRotation = theta - .pi / 2
+            
+            velocityX = Double(cos(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
+            velocityY = Double(sin(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
+            velocityZ = Double(sin(phi) * CGFloat(baseVelocty)) * coordMultiplier
+        }
     }
+    
     
     func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
     {
@@ -304,17 +332,34 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         
         group.enter()
         group.enter()
+        group.enter()
+        group.enter()
         
         loadPlanetList(group)
         loadDate(group)
+        getUserData(group)
+        getPositionFromServer(group)
+
         
         group.notify(queue: .main) {
             self.loadPlanets({
-                self.getPositionFromServer()
                 self.addGameViews()
-
+                self.setCurrentTravelingPlanets()
             })
         }
+    }
+    
+    func getUserData(_ group: DispatchGroup)
+    {
+        ref.child("users/\(email!)/data/coordinatesSet").observeSingleEvent(of: .value, with: { (snapshot) in
+            
+            if (snapshot.exists() && snapshot.value as! Bool == true)
+            {
+                self.coordinatesSet = true
+            }
+            group.leave()
+            
+        })
     }
     
     @objc func textFieldDidChange(textField: UITextField) {
@@ -534,19 +579,27 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 sceneCam.position = CGPoint(x: 0, y: 0)
                 rocket.position = sceneCam.position
                 
-                planet.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -planet.radius / 2, y: 0.0), size: CGSize(width: planet.radius, height: planet.radius)), transform: nil)
+                planet.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -planet.radius, y: -planet.radius), size: CGSize(width: planet.radius * 2, height: planet.radius * 2)), transform: nil)
                 
-                planet.position = CGPoint(x: rocket.position.x, y: rocket.position.y - CGFloat(planet.radius))
                 planet.fillColor = UIColor.blue
                 
                 self.addChild(planet)
                 
                 if (!coordinatesSet)
                 {
+                    print("coordinates not set")
                     coordinatesSet = true
                     positionX = planet.x
                     positionY = (planet.y + Int(planet.radius) * Int(coordMultiplier))
                     positionZ = planet.z
+                    ref.child("users/\(email!)/data/coordinatesSet").setValue(true)
+                    planet.position = CGPoint(x: rocket.position.x, y: rocket.position.y - CGFloat(planet.radius))
+
+                }
+                else
+                {
+                    print("coordinates already set")
+                    planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
                 }
             }
         }
@@ -555,8 +608,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         {
             if (planet.startingPlanet == false)
             {
-                planet.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -planet.radius / 2, y: 0.0), size: CGSize(width: planet.radius, height: planet.radius)), transform: nil)
                 planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
+                planet.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -planet.radius / 2, y: 0.0), size: CGSize(width: planet.radius, height: planet.radius)), transform: nil)
                 planet.fillColor = UIColor.white
                 self.addChild(planet)
             }
@@ -567,42 +620,25 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
 
     }
     
-//    func getCoordinateData() -> [String: Any]
-//    {
-//        var dict = [String: Any]()
-//        dict["positionX"] = positionX
-//        dict["positionY"] = positionY
-//        dict["positionZ"] = positionZ
-//        dict["velocityX"] = velocityX
-//        dict["velocityY"] = velocityY
-//        dict["velocityZ"] = velocityZ
-//
-//        return dict
-//    }
-    
-    
-    
     @objc func pushPositionToServer()
     {
-        //let dict = getCoordinateData()
         let travelingToName = travelingTo != nil ? travelingTo.name : "nil"
+        let currentPlanetName = currentPlanet != nil ? currentPlanet.name : "nil"
         
         ref.child("users/\(email!)/position").setValue(
-            ["positionX" : positionX,
-             "positionY" : positionY,
-             "positionZ" : positionZ,
+            ["positionX" : positionX!,
+             "positionY" : positionY!,
+             "positionZ" : positionZ!,
              "velocityX" : velocityX!,
              "velocityY" : velocityY!,
              "velocityZ" : velocityZ!,
              "timestamp": ServerValue.timestamp(),
-             "travelingTo" : travelingToName!])
+             "travelingTo" : travelingToName!,
+             "currentPlanet" : currentPlanetName!])
         
-        //ref.child("timestamp").setValue(ServerValue.timestamp())
     }
     
-    
-    
-    func getPositionFromServer()
+    func getPositionFromServer(_ group: DispatchGroup!)
     {
 
         ref.child("users/\(email!)/position").observeSingleEvent(of: .value, with: {
@@ -618,14 +654,15 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.velocityX = coordDict["velocityX"] as? Double
                 self.velocityY = coordDict["velocityY"] as? Double
                 self.velocityZ = coordDict["velocityZ"] as? Double
-                self.travelingTo = self.planetWithName((coordDict["travelingTo"] as? String)!)
+                self.travelingToName = (coordDict["travelingTo"] as? String)!
+                self.currentPlanetName = (coordDict["currentPlanet"] as? String)
                 self.coordinatesSet = true
                 let oldTimestamp = coordDict["timestamp"] as! Int
                 print("old timestamp: \(oldTimestamp)")
-                if (self.travelingTo != nil)
-                {
-                    self.currentPlanet = nil
-                }
+//                if (self.travelingTo != nil)
+//                {
+//                    self.currentPlanet = nil
+//                }
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 print("\(millisecondsElapsed) milliseconds since last load")
 
@@ -639,9 +676,22 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.positionY += Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed))
                 self.positionZ += Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed))
                 
+                if (group != nil)
+                {
+                    group.leave()
+                }
             }
 
         })
+    }
+    
+    func setCurrentTravelingPlanets()
+    {
+        travelingTo = self.planetWithName(travelingToName)
+        if (self.travelingTo != nil)
+        {
+            self.currentPlanet = nil
+        }
     }
     
     func planetWithName(_ name: String) -> Planet!
@@ -661,16 +711,11 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         let newTime = Date().timeIntervalSinceReferenceDate
         let timeDiff = newTime - localTime
         localTime = newTime
-        print(timeDiff)
         
         
         
         if (travelingTo != nil)
         {
-            
-//            positionX += Int(velocityX! * framesPerHour)
-//            positionY += Int(velocityY! * framesPerHour)
-//            positionZ += Int(velocityZ! * framesPerHour)
             
             positionX += Int(velocityX! * secondsPerHour * timeDiff)
             positionY += Int(velocityY! * secondsPerHour * timeDiff)
@@ -681,8 +726,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
             }
             
-            
-            
             xPositionLabel.text = "x position: \(positionX!)"
             yPositionLabel.text = "y position: \(positionY!)"
             zPositionLabel.text = "z position: \(positionZ!)"
@@ -690,10 +733,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             yVelocityLabel.text = "y velocity: \(velocityY!)"
             zVelocityLabel.text = "z velocity: \(velocityZ!)"
 
-            //if (currentTime.truncatingRemainder(dividingBy: 60) == 0)
-            //{
-            //    print("calculated velocities")
-                calculateVelocities()
+           //
+                //print("calculated velocities")
+            calculateVelocities()
             //}
         }
     }
