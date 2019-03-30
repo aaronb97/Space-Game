@@ -98,10 +98,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var currentPlanet : Planet!
     
     let coordMultiplier = 100.0
-    let AU = 149597871.0
-    let framesPerHour : Double = 1 / 216000
-    let millisecondsPerHour : Double = 1 / 3600000
-    let secondsPerHour : Double = 1 / 3600
+    
     
     var email: String!
     var timestamp : Int!
@@ -262,12 +259,12 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             velocityZ = 0
             currentPlanet = travelingTo
             travelingTo = nil
-            rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
+            rocket.zRotation = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
         }
         else
         {
-            let phi = angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
-            let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingToPointx, y2: travelingToPointy)
+            let phi = Math.angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
+            let theta = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingToPointx, y2: travelingToPointy)
             rocket.zRotation = theta - .pi / 2
             
             velocityX = Double(cos(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
@@ -276,10 +273,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
     }
     
-    func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
-    {
-        return atan2(y2 - y1, x2 - x1)
-    }
+    
     
     func tableView(_ tableView: UITableView,
                    didSelectRowAt indexPath: IndexPath) {
@@ -365,9 +359,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     @objc func textFieldDidChange(textField: UITextField) {
         usernameLabel.text = textField.text!.filter("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM01234567890".contains)
-        usernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: usernameLabel.text!, font: usernameLabel.font) / 2,
+        usernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: usernameLabel.text!, font: usernameLabel.font) / 2,
                                      y : enterUsernameLabel.frame.maxY + 3,
-                                     width: textWidth(text: usernameLabel.text!, font: usernameLabel.font),
+                                     width: Math.textWidth(text: usernameLabel.text!, font: usernameLabel.font),
                                      height: 30.0)
         
         invalidUsernameLabel.text = ""
@@ -378,9 +372,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         if (usernameLabel.text == "")
         {
             self.invalidUsernameLabel.text = "Username can't be empty"
-            self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - self.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
+            self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
                                                      y : self.usernameLabel.frame.maxY + 3,
-                                                     width: self.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
+                                                     width: Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
                                                      height: 30.0)
         }
         else
@@ -390,9 +384,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 if (snapshot.exists() && (snapshot.value as! Bool) == true)  //username already exits
                 {
                     self.invalidUsernameLabel.text = "Username already taken"
-                    self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - self.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
+                    self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
                                                  y : self.usernameLabel.frame.maxY + 3,
-                                                 width: self.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
+                                                 width: Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
                                                  height: 30.0)
                 }
                 else
@@ -413,10 +407,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         return true
     }
     
-    func textWidth(text: String, font: UIFont?) -> CGFloat {
-        let attributes = font != nil ? [NSAttributedString.Key.font: font] : [:]
-        return text.size(withAttributes: attributes as [NSAttributedString.Key : Any]).width
-    }
+    
     
     func nicknameSetup()
     {
@@ -434,9 +425,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         enterUsernameLabel.textColor = UIColor.white
         enterUsernameLabel.font = UIFont(name: enterUsernameLabel.font.fontName, size: 12)
         enterUsernameLabel.tag = 1
-        enterUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font) / 2,
+        enterUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font) / 2,
                                           y : (self.view?.frame.size.height)! / 4,
-                                          width: textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font),
+                                          width: Math.textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font),
                                           height: 30.0)
         
         usernameLabel = UILabel()
@@ -507,10 +498,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 print("date loaded")
             })
         })
-        
-        
-        
-        
     }
     
     func loadPlanetList( _ group: DispatchGroup)
@@ -541,9 +528,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
-                                        x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * self.AU),
-                                            y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * self.AU),
-                                            z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * self.AU))
+                                        x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * Math.AU),
+                                            y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * Math.AU),
+                                            z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * Math.AU))
                     self.planets.append(planet)
                     if (!self.coordinatesSet && planet.startingPlanet == true)
                     {
@@ -658,13 +645,13 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 print("\(millisecondsElapsed) milliseconds since last load")
 
-                print("x change: \(Int(self.velocityX! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
-                print("y change: \(Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
-                print("z change: \(Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
+                print("x change: \(Int(self.velocityX! / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                print("y change: \(Int(self.velocityY! / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                print("z change: \(Int(self.velocityZ! / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
                 
-                self.positionX += Int(self.velocityX! * self.millisecondsPerHour * Double(millisecondsElapsed))
-                self.positionY += Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed))
-                self.positionZ += Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionX += Int(self.velocityX! / Math.millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionY += Int(self.velocityY! / Math.millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionZ += Int(self.velocityZ! / Math.millisecondsPerHour * Double(millisecondsElapsed))
                 
                 
             }
@@ -714,9 +701,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         if (travelingTo != nil)
         {
             
-            positionX += Int(velocityX! * secondsPerHour * timeDiff)
-            positionY += Int(velocityY! * secondsPerHour * timeDiff)
-            positionZ += Int(velocityZ! * secondsPerHour * timeDiff)
+            positionX += Int(velocityX! / Math.secondsPerHour * timeDiff)
+            positionY += Int(velocityY! / Math.secondsPerHour * timeDiff)
+            positionZ += Int(velocityZ! / Math.secondsPerHour * timeDiff)
             
             for planet in planets
             {
