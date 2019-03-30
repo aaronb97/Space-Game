@@ -17,8 +17,8 @@ class Planet: SKShapeNode {
     var x: Int!
     var y: Int!
     var z: Int!
-    
-    
+    var distance: Double!
+    var visitorDict: [String: Bool]!
     
     init(name: String, radius: Double, startingPlanet: Bool, x: Int, y: Int, z: Int) {
         
@@ -38,6 +38,8 @@ class Planet: SKShapeNode {
 
         //self.position = getCoordinates(filename: self.name!, dateString: dateFormatter.string(from: Date()))
     }
+    
+    
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")

@@ -18,10 +18,14 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let planet = self.planets[indexPath.row]
         var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
+        
         if cell == nil {
             cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
         }
+        
+        cell?.detailTextLabel?.numberOfLines = 2
         
         cell!.textLabel?.text = self.planets[indexPath.row].name
         if (self.planets[indexPath.row] == currentPlanet)
@@ -44,9 +48,19 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             cell!.detailTextLabel?.textColor = UIColor.black
             cell!.selectionStyle = UITableViewCell.SelectionStyle.default
             cell!.detailTextLabel?.text = ""
-            //cell!.detailTextLabel?.text = "Distance: \(String(describing: GameScene.formatDistance(self.planets[indexPath.row].distance! * Planet.AUDivider)))"
+            cell!.detailTextLabel?.text = "Distance: \(String(describing: Math.formatDistance(self.planets[indexPath.row].distance!)))"
         }
+        let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
+        cell?.detailTextLabel?.text?.append("\nVisited by: \(visitorCount)")
         return cell!
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
     }
     
     var xPositionLabel: UILabel!
@@ -139,6 +153,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         })
         
         planetListTableView = UITableView(frame: CGRect(x:20, y: 20 , width: self.view!.frame.width - 40, height: self.view!.frame.height / 1.5))
+        planetListTableView.rowHeight = CGFloat(100)
         self.scene?.view?.addSubview(planetListTableView)
         planetListTableView.delegate = self
         planetListTableView.dataSource = self
@@ -224,6 +239,16 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         {
             setACourseButton.isHidden = true
             planetListTableView.isHidden = false
+            
+            for planet in planets {
+                planet.distance = Math.distance(x1: Double(positionX) / coordMultiplier,
+                                                x2: Double(planet.x)  / coordMultiplier,
+                                                y1: Double(positionY) / coordMultiplier,
+                                                y2: Double(planet.y)  / coordMultiplier)
+            }
+            
+            planets.sort(by: {$0.distance < $1.distance})
+            
             planetListTableView.reloadData()
         }
         else if (sender == goButton)
@@ -260,6 +285,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             currentPlanet = travelingTo
             travelingTo = nil
             rocket.zRotation = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
+            addVisitorToPlanet(currentPlanet.name!)
         }
         else
         {
@@ -273,6 +299,13 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
     }
     
+    func addVisitorToPlanet(_ name: String)
+    {
+        print(name)
+        
+        self.ref.child("planets/\(name)/values/visitors/\(self.username!)").setValue(true)
+        print("added visitor \(username!) to \(name)")
+    }
     
     
     func tableView(_ tableView: UITableView,
@@ -340,17 +373,19 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     self.moveRocketToCurrentPlanet()
                 }
                 self.drawObjects()
+                self.startPushTimer()
             })
         }
     }
     
     func getUserData(_ group: DispatchGroup)
     {
-        ref.child("users/\(email!)/data/coordinatesSet").observeSingleEvent(of: .value, with: { (snapshot) in
+        ref.child("users/\(email!)/data").observeSingleEvent(of: .value, with: { (snapshot) in
             
-            if (snapshot.exists() && snapshot.value as! Bool == true)
+            if let dict = snapshot.value as? [String: Any]
             {
-                self.coordinatesSet = true //user has started the game already
+                self.username = dict["nickname"] as? String
+                self.coordinatesSet = dict["coordinatesSet"] != nil
             }
             group.leave()
             print("got user data")
@@ -394,7 +429,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     textField.resignFirstResponder()
                     self.username = textField.text
                     self.ref.child("nicknames/\(self.username!)").setValue(true)
-                    self.ref.child("users/\(self.email!)/nickname").setValue(textField.text!)
+                    self.ref.child("users/\(self.email!)/data/nickname").setValue(textField.text!)
 
                     self.nicknameCleanup()
                     self.loadPlanetlistDatePlanets()
@@ -447,6 +482,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         self.view?.addSubview(usernameLabel)
         self.view?.addSubview(enterUsernameLabel)
         self.view?.addSubview(invalidUsernameLabel)
+        textField.autocorrectionType = UITextAutocorrectionType.no
         textField.becomeFirstResponder()
     }
     
@@ -468,7 +504,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         self.view?.addSubview(goButton)
         self.view?.addSubview(speedLabel)
         
-        startPushTimer()
     }
     
     func startPushTimer()
@@ -524,18 +559,22 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     snap2 in
                     
                     let valueDict = snap2.value as! [String: Any]
-                    
+                    let visitorDict = valueDict["visitors"] as? [String: Bool]
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
-                                        x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * Math.AU),
+                                            x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * Math.AU),
                                             y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * Math.AU),
                                             z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * Math.AU))
+                    planet.visitorDict = visitorDict
+                    
                     self.planets.append(planet)
+                    
                     if (!self.coordinatesSet && planet.startingPlanet == true)
                     {
                         self.currentPlanet = planet
                     }
+                    
                     print("loaded planet \(planet.name!)")
                     group.leave()
                 })
@@ -577,7 +616,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     positionZ = planet.z
                     ref.child("users/\(email!)/data/coordinatesSet").setValue(true)
                     planet.position = CGPoint(x: rocket.position.x, y: rocket.position.y - CGFloat(planet.radius))
-
+                    addVisitorToPlanet(planet.name!)
                 }
                 else
                 {
@@ -673,9 +712,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     func moveRocketToCurrentPlanet()
     {
         print("moving rocket to \(currentPlanet.name!)")
-        //print("\(currentPlanet.x!) \(currentPlanet.y!) \(currentPlanet.radius!)")
         positionX = currentPlanet.x
         positionY = currentPlanet.y + Int(currentPlanet.radius) * Int(coordMultiplier)
+        positionZ = currentPlanet.z
     }
     
     func planetWithName(_ name: String!) -> Planet!
@@ -695,8 +734,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         let newTime = Date().timeIntervalSinceReferenceDate
         let timeDiff = newTime - localTime
         localTime = newTime
-        
-        
         
         if (travelingTo != nil)
         {

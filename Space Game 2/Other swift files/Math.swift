@@ -25,4 +25,30 @@ class Math {
         let attributes = font != nil ? [NSAttributedString.Key.font: font] : [:]
         return text.size(withAttributes: attributes as [NSAttributedString.Key : Any]).width
     }
+    
+    static func distance(x1: Double, x2: Double, y1: Double, y2: Double) -> Double
+    {
+        return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
+    }
+    
+    static func distance(x1: CGFloat, x2: CGFloat, y1: CGFloat, y2: CGFloat) -> Double
+    {
+        return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)))
+    }
+    
+    static func formatDistance(_ distance: Double) -> String
+    {
+        if distance > 1000000000
+        {
+            return String(format: "%1.1f billion km", distance / 1000000000)
+        }
+        else if distance > 1000000
+        {
+            return String(format: "%1.1f million km", distance / 1000000)
+        }
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        return "\(numberFormatter.string(from: NSNumber(value: Int(distance)))!) km"
+    }
 }
