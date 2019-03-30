@@ -13,55 +13,6 @@ import FirebaseDatabase
 
 class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return planets.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let planet = self.planets[indexPath.row]
-        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
-        
-        if cell == nil {
-            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
-        }
-        
-        cell?.detailTextLabel?.numberOfLines = 2
-        
-        cell!.textLabel?.text = self.planets[indexPath.row].name
-        if (self.planets[indexPath.row] == currentPlanet)
-        {
-            cell!.textLabel?.textColor = UIColor.gray
-            cell!.detailTextLabel?.text = "You are here"
-            cell!.detailTextLabel?.textColor = UIColor.gray
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
-        }
-        else if (self.planets[indexPath.row] == travelingTo)
-        {
-            cell!.textLabel?.textColor = UIColor.gray
-            cell!.detailTextLabel?.text = "You are already traveling to this planet"
-            cell!.detailTextLabel?.textColor = UIColor.gray
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
-        }
-        else
-        {
-            cell!.textLabel?.textColor = UIColor.black
-            cell!.detailTextLabel?.textColor = UIColor.black
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.default
-            cell!.detailTextLabel?.text = ""
-            cell!.detailTextLabel?.text = "Distance: \(String(describing: Math.formatDistance(self.planets[indexPath.row].distance!)))"
-        }
-        let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
-        cell?.detailTextLabel?.text?.append("\nVisited by: \(visitorCount)")
-        return cell!
-    }
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
-    }
-    
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
-    }
     
     var xPositionLabel: UILabel!
     var yPositionLabel: UILabel!
@@ -113,22 +64,17 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     let coordMultiplier = 100.0
     
-    
     var email: String!
     var timestamp : Int!
-    
     
     var pushTimer: Timer!
     var localTime: TimeInterval!
     
+    var traveledTo = [String: Bool]()
+    
     override func didMove(to view: SKView) {
         
-        xPositionLabel = UILabel()
-        yPositionLabel = UILabel()
-        zPositionLabel = UILabel()
-        xVelocityLabel = UILabel()
-        yVelocityLabel = UILabel()
-        zVelocityLabel = UILabel()
+        
         
         sceneCam = SKCameraNode()
         camera = sceneCam
@@ -179,27 +125,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         speedLabel.font = UIFont(name: "Courier", size: 13)
         
         
-        let labelHeight = 15.0
-        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        zVelocityLabel.frame = CGRect(x: 0, y: yVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
         
-        formatNumberLabel(xPositionLabel)
-        formatNumberLabel(yPositionLabel)
-        formatNumberLabel(zPositionLabel)
-        formatNumberLabel(xVelocityLabel)
-        formatNumberLabel(yVelocityLabel)
-        formatNumberLabel(zVelocityLabel)
-
-        self.view?.addSubview(xPositionLabel)
-        self.view?.addSubview(yPositionLabel)
-        self.view?.addSubview(zPositionLabel)
-        self.view?.addSubview(xVelocityLabel)
-        self.view?.addSubview(yVelocityLabel)
-        self.view?.addSubview(zVelocityLabel)
+        
+        
 
         velocityX = 0.0
         velocityY = 0.0
@@ -214,6 +142,38 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.timestamp = snap.value as? Int
             print("timestamp set: \(self.timestamp!)")
         })
+    }
+    
+    func addDebugLabels()
+    {
+        xPositionLabel = UILabel()
+        yPositionLabel = UILabel()
+        zPositionLabel = UILabel()
+        xVelocityLabel = UILabel()
+        yVelocityLabel = UILabel()
+        zVelocityLabel = UILabel()
+        
+        let labelHeight = 15.0
+        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        zVelocityLabel.frame = CGRect(x: 0, y: yVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
+        
+        formatNumberLabel(xPositionLabel)
+        formatNumberLabel(yPositionLabel)
+        formatNumberLabel(zPositionLabel)
+        formatNumberLabel(xVelocityLabel)
+        formatNumberLabel(yVelocityLabel)
+        formatNumberLabel(zVelocityLabel)
+        
+        self.view?.addSubview(xPositionLabel)
+        self.view?.addSubview(yPositionLabel)
+        self.view?.addSubview(zPositionLabel)
+        self.view?.addSubview(xVelocityLabel)
+        self.view?.addSubview(yVelocityLabel)
+        self.view?.addSubview(zVelocityLabel)
     }
     
     func formatNumberLabel(_ label: UILabel)
@@ -277,7 +237,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         let travelingToPointy = Ay + CGFloat(r!) * (By - Ay) / denom
         
         
-        if (abs(travelingToPointx) < 1 && abs(travelingToPointy) < 1)
+        if (abs(travelingToPointx) < 1 && abs(travelingToPointy) < 1) //touch down on a planet
         {
             velocityX = 0
             velocityY = 0
@@ -285,7 +245,14 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             currentPlanet = travelingTo
             travelingTo = nil
             rocket.zRotation = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
-            addVisitorToPlanet(currentPlanet.name!)
+            
+            if (traveledTo[currentPlanet.name!] == nil)
+            {
+                addVisitorToPlanet(currentPlanet.name!)
+            }
+            
+            traveledTo[currentPlanet.name!] = true
+            pushTraveledToDict()
         }
         else
         {
@@ -297,6 +264,11 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             velocityY = Double(sin(theta) * abs(cos(phi)) * CGFloat(baseVelocty)) * coordMultiplier
             velocityZ = Double(sin(phi) * CGFloat(baseVelocty)) * coordMultiplier
         }
+    }
+    
+    func pushTraveledToDict()
+    {
+        ref.child("users/\(email!)/data/traveledTo").setValue(traveledTo)
     }
     
     func addVisitorToPlanet(_ name: String)
@@ -386,6 +358,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             {
                 self.username = dict["nickname"] as? String
                 self.coordinatesSet = dict["coordinatesSet"] != nil
+                self.traveledTo = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
             }
             group.leave()
             print("got user data")
@@ -508,7 +481,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     func startPushTimer()
     {
-        pushTimer = Timer.scheduledTimer(timeInterval: 5.0, target: self, selector: #selector(pushPositionToServer), userInfo: nil, repeats: true)
+        pushTimer = Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(pushPositionToServer), userInfo: nil, repeats: true)
     }
     
     func loadDate(_ group: DispatchGroup )
@@ -559,21 +532,25 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     snap2 in
                     
                     let valueDict = snap2.value as! [String: Any]
-                    let visitorDict = valueDict["visitors"] as? [String: Bool]
+                    var visitorDict = valueDict["visitors"] as? [String: Bool] ?? [String:Bool]()
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
                                             x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * Math.AU),
                                             y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * Math.AU),
                                             z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * Math.AU))
-                    planet.visitorDict = visitorDict
                     
                     self.planets.append(planet)
                     
                     if (!self.coordinatesSet && planet.startingPlanet == true)
                     {
                         self.currentPlanet = planet
+                        visitorDict[planet.name!] = true
+                        self.traveledTo[planet.name!] = true
+                        self.pushTraveledToDict()
                     }
+                    
+                    planet.visitorDict = visitorDict
                     
                     print("loaded planet \(planet.name!)")
                     group.leave()
@@ -747,12 +724,12 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
             }
             
-            xPositionLabel.text = "x position: \(positionX!)"
-            yPositionLabel.text = "y position: \(positionY!)"
-            zPositionLabel.text = "z position: \(positionZ!)"
-            xVelocityLabel.text = "x velocity: \(velocityX!)"
-            yVelocityLabel.text = "y velocity: \(velocityY!)"
-            zVelocityLabel.text = "z velocity: \(velocityZ!)"
+//            xPositionLabel.text = "x position: \(positionX!)"
+//            yPositionLabel.text = "y position: \(positionY!)"
+//            zPositionLabel.text = "z position: \(positionZ!)"
+//            xVelocityLabel.text = "x velocity: \(velocityX!)"
+//            yVelocityLabel.text = "y velocity: \(velocityY!)"
+//            zVelocityLabel.text = "z velocity: \(velocityZ!)"
 
            //
                 //print("calculated velocities")
@@ -760,4 +737,59 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             //}
         }
     }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return planets.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let planet = self.planets[indexPath.row]
+        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
+        
+        if cell == nil {
+            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
+        }
+        
+        cell?.detailTextLabel?.numberOfLines = 3
+        
+        cell!.textLabel?.text = planet.name
+        if (self.planets[indexPath.row] == currentPlanet)
+        {
+            cell!.textLabel?.textColor = UIColor.gray
+            cell!.detailTextLabel?.text = "You are here"
+            cell!.detailTextLabel?.textColor = UIColor.gray
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
+        }
+        else if (self.planets[indexPath.row] == travelingTo)
+        {
+            cell!.textLabel?.textColor = UIColor.gray
+            cell!.detailTextLabel?.text = "You are already traveling to this planet"
+            cell!.detailTextLabel?.textColor = UIColor.gray
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
+        }
+        else
+        {
+            cell!.textLabel?.textColor = UIColor.black
+            cell!.detailTextLabel?.textColor = UIColor.black
+            cell!.selectionStyle = UITableViewCell.SelectionStyle.default
+            cell!.detailTextLabel?.text = ""
+            cell!.detailTextLabel?.text = "Distance: \(String(describing: Math.formatDistance(self.planets[indexPath.row].distance!)))"
+        }
+        let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
+        cell?.detailTextLabel?.text?.append("\nVisited by: \(visitorCount)")
+        if (traveledTo[planet.name!] == true && planet != currentPlanet)
+        {
+            cell?.detailTextLabel?.text?.append("\nYou have been here")
+        }
+        return cell!
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
 }
