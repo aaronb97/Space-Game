@@ -210,7 +210,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         label.font = UIFont(name: "Courier", size: 13)
     }
     
-    
     func formatButton(_ button: UIButton)
     {
         button.setTitleColor(UIColor.white, for: .normal)
@@ -255,7 +254,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         let travelingToPointx = Ax + CGFloat(r!) * (Bx - Ax) / denom
         let travelingToPointy = Ay + CGFloat(r!) * (By - Ay) / denom
         
-        print("\(travelingToPointx) \(travelingToPointy)")
         
         if (abs(travelingToPointx) < 1 && abs(travelingToPointy) < 1)
         {
@@ -268,7 +266,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
         else
         {
-        
             let phi = angleBetween(x1: CGFloat(positionY!), y1: CGFloat(positionZ!), x2: CGFloat(travelingTo.y), y2: CGFloat(travelingTo.z))
             let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: travelingToPointx, y2: travelingToPointy)
             rocket.zRotation = theta - .pi / 2
@@ -278,7 +275,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             velocityZ = Double(sin(phi) * CGFloat(baseVelocty)) * coordMultiplier
         }
     }
-    
     
     func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
     {
@@ -345,6 +341,11 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             self.loadPlanets({
                 self.addGameViews()
                 self.setCurrentTravelingPlanets()
+                if (self.currentPlanet != nil)
+                {
+                    self.moveRocketToCurrentPlanet()
+                }
+                self.drawObjects()
             })
         }
     }
@@ -355,10 +356,10 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             
             if (snapshot.exists() && snapshot.value as! Bool == true)
             {
-                self.coordinatesSet = true
+                self.coordinatesSet = true //user has started the game already
             }
             group.leave()
-            
+            print("got user data")
         })
     }
     
@@ -544,7 +545,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                                             y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * self.AU),
                                             z: Int(Double(coordDict["z"]!)! * self.coordMultiplier * self.AU))
                     self.planets.append(planet)
-                    if (planet.startingPlanet == true)
+                    if (!self.coordinatesSet && planet.startingPlanet == true)
                     {
                         self.currentPlanet = planet
                     }
@@ -557,14 +558,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
         
         group.notify(queue: .main) {
-            self.drawObjects()
+            //self.drawObjects()
             callback()
         }
-    }
-    
-    func drawPlanet(_ planet: Planet)
-    {
-        
     }
     
     func drawObjects()
@@ -659,10 +655,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.coordinatesSet = true
                 let oldTimestamp = coordDict["timestamp"] as! Int
                 print("old timestamp: \(oldTimestamp)")
-//                if (self.travelingTo != nil)
-//                {
-//                    self.currentPlanet = nil
-//                }
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 print("\(millisecondsElapsed) milliseconds since last load")
 
@@ -670,16 +662,16 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 print("y change: \(Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
                 print("z change: \(Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed)))")
                 
-                print(self.positionX!)
-                
                 self.positionX += Int(self.velocityX! * self.millisecondsPerHour * Double(millisecondsElapsed))
                 self.positionY += Int(self.velocityY! * self.millisecondsPerHour * Double(millisecondsElapsed))
                 self.positionZ += Int(self.velocityZ! * self.millisecondsPerHour * Double(millisecondsElapsed))
                 
-                if (group != nil)
-                {
-                    group.leave()
-                }
+                
+            }
+            
+            if (group != nil)
+            {
+                group.leave()
             }
 
         })
@@ -688,13 +680,18 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     func setCurrentTravelingPlanets()
     {
         travelingTo = self.planetWithName(travelingToName)
-        if (self.travelingTo != nil)
-        {
-            self.currentPlanet = nil
-        }
+        currentPlanet = self.planetWithName(currentPlanetName)
     }
     
-    func planetWithName(_ name: String) -> Planet!
+    func moveRocketToCurrentPlanet()
+    {
+        print("moving rocket to \(currentPlanet.name!)")
+        //print("\(currentPlanet.x!) \(currentPlanet.y!) \(currentPlanet.radius!)")
+        positionX = currentPlanet.x
+        positionY = currentPlanet.y + Int(currentPlanet.radius) * Int(coordMultiplier)
+    }
+    
+    func planetWithName(_ name: String!) -> Planet!
     {
         for planet in planets
         {
