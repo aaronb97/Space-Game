@@ -78,6 +78,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     var email: String!
     var timestamp : Int!
+    var nextSpeedBoostTime = Int.max
     
     var pushTimer: Timer!
     var localTime: TimeInterval!
@@ -228,9 +229,23 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             planetSelection = nil
             currentPlanet = nil
             
-            velocity = 50000
+            velocity = calcSpeed()
             calculateVelocities()
-            pushPositionToServer()
+            
+            
+        }
+    }
+    
+    func setNextSpeedBoostTime()
+    {
+        let group = DispatchGroup()
+        group.enter()
+        loadDate(group)
+        
+        group.notify(queue: .main) {
+            self.nextSpeedBoostTime = self.timestamp + 43200000
+            print("next speed boost time set: \(self.nextSpeedBoostTime)")
+            self.pushPositionToServer()
         }
     }
     
@@ -519,7 +534,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     self.dateString = dateFormatter.string(from: date as Date)
                 }
                 
+                
                 group.leave()
+                
                 print("date loaded")
             })
         })
@@ -640,6 +657,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     {
         let travelingToName = travelingTo != nil ? travelingTo.name : "nil"
         let currentPlanetName = currentPlanet != nil ? currentPlanet.name : "nil"
+        //let path = "users/\(email!)/position"
         
         ref.child("users/\(email!)/position").setValue(
             ["positionX" : positionX!,
@@ -651,7 +669,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
              "timestamp": ServerValue.timestamp(),
              "travelingTo" : travelingToName!,
              "currentPlanet" : currentPlanetName!,
-             "velocity" : velocity])
+             "velocity" : velocity,
+             "nextSpeedBoostTime": nextSpeedBoostTime])
         
     }
     
@@ -674,12 +693,25 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.velocityZ = coordDict["velocityZ"] as? Double ?? 0
                 self.travelingToName = (coordDict["travelingTo"] as? String)!
                 self.currentPlanetName = (coordDict["currentPlanet"] as? String)
+                self.nextSpeedBoostTime = coordDict["nextSpeedBoostTime"] as? Int ?? Int.max
+                
 
                 let oldTimestamp = coordDict["timestamp"] as! Int
                 print("old timestamp: \(oldTimestamp)")
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 print("\(millisecondsElapsed) milliseconds since last load")
 
+                if (self.timestamp > self.nextSpeedBoostTime)
+                {
+                    print("speed boosted")
+                    self.velocity *= 2
+                    self.setNextSpeedBoostTime()
+                }
+                else
+                {
+                    print("speed not boosted, need to wait \(self.nextSpeedBoostTime - self.timestamp) milliseconds")
+                }
+                
                 print("x change: \(Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
                 print("y change: \(Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
                 print("z change: \(Int(self.velocityZ / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
@@ -712,7 +744,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         positionY = currentPlanet.y + Int(currentPlanet.radius) * Int(coordMultiplier)
         positionZ = currentPlanet.z
         addVisitorToPlanet(currentPlanet.name!)
-        
     }
     
     func planetWithName(_ name: String!) -> Planet!
@@ -725,6 +756,25 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             }
         }
         return nil
+    }
+    
+    func calcSpeed() -> Int
+    {
+        var speedSum = 40000
+        for key in traveledTo.keys
+        {
+            if let planet = planetWithName(key) {
+                if planet.type == "Planet"
+                {
+                    speedSum += 10000
+                }
+                else if planet.type == "Moon" {
+                    
+                    speedSum += 5000
+                }
+            }
+        }
+        return speedSum
     }
 
     override func update(_ currentTime: TimeInterval) {
