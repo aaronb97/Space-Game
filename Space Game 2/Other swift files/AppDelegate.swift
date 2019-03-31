@@ -62,7 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         GIDSignIn.sharedInstance().delegate = self
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.window!.backgroundColor = UIColor.black
+        self.window!.backgroundColor = UIColor.spaceColor
         
         let signInViewController = SignInViewController()
         self.window!.rootViewController = signInViewController
