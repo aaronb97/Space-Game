@@ -36,6 +36,11 @@ class Math {
         return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)))
     }
     
+    static func distance(x1: CGFloat, x2: CGFloat, y1: CGFloat, y2: CGFloat, z1: CGFloat, z2: CGFloat) -> Double
+    {
+        return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2)))
+    }
+    
     static func formatDistance(_ distance: Double) -> String
     {
         if distance > 1000000000
@@ -50,6 +55,33 @@ class Math {
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal
         return "\(numberFormatter.string(from: NSNumber(value: Int(distance)))!) km"
+    }
+    
+    static func formatTime(_ seconds: Int) -> String
+    {
+        var returnText = ""
+        
+        var minutes = Double(seconds) / 60.0
+        var hours = Double(minutes) / 60.0
+        let days = Double(hours) / 24
+        //let reducedSeconds = Double(seconds).truncatingRemainder(dividingBy: 60.0)
+        minutes = minutes.truncatingRemainder(dividingBy: 60.0)
+        hours = hours.truncatingRemainder(dividingBy: 24.0)
+        
+        if days >= 1
+        {
+            returnText.append("\(Int(days))d ")
+        }
+        if hours >= 1 || days >= 1
+        {
+            returnText.append("\(Int(hours))h ")
+        }
+        if minutes >= 1 || hours >= 1 || days >= 1
+        {
+            returnText.append("\(Int(minutes))m ")
+        }
+        //returnText.append("\(seconds % 60)s")
+        return returnText
     }
     
     static func hexStringToUIColor (hex:String) -> UIColor {

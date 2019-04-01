@@ -17,7 +17,7 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate{
     override func viewDidLoad() {
         super.viewDidLoad()
         GIDSignIn.sharedInstance().uiDelegate = self
-        GIDSignIn.sharedInstance()?.signInSilently()
+        //GIDSignIn.sharedInstance()?.signInSilently()
         
         let signInButton = GIDSignInButton()
         
@@ -26,5 +26,8 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate{
         
     }
     
+    override var prefersStatusBarHidden: Bool {
+        return true
+    }
     
 }

@@ -103,8 +103,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-        scene.pushPositionToServer()
-        scene.pushTimer.invalidate()
+        if scene != nil
+        {
+            scene.pushPositionToServer()
+            scene.pushTimer.invalidate()
+            scene.calcVelocityTimer.invalidate()
+        }
         print("resigned")
     }
 
@@ -125,12 +129,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             group.enter()
             scene.loadDate(group)
             group.notify(queue: .main) {
-                scene.getPositionFromServer(nil)
-                scene.startPushTimer()
+                let group2 = DispatchGroup()
+                group2.enter()
+                scene.getPositionFromServer(group2)
+                
+                group2.notify(queue: .main)
+                {
+                    scene.calculateBoostPlanetLand()
+                    scene.startPushTimer()
+                    scene.startCalculateVelocityTimer()
+                }
             }
             
             scene.localTime = Date().timeIntervalSinceReferenceDate
-
         }
         
         print("became active")

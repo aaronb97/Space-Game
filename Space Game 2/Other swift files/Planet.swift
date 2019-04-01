@@ -44,6 +44,16 @@ class Planet: SKShapeNode {
         self.z = z
     }
     
+    func calculateDistance(x: Int, y: Int, z: Int)
+    {
+        distance = Math.distance(x1: CGFloat(x),
+                                 x2: CGFloat(self.x),
+                                 y1: CGFloat(y),
+                                 y2: CGFloat(self.y),
+                                 z1: CGFloat(y),
+                                 z2: CGFloat(self.y)) / 100
+    }
+    
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
