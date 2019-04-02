@@ -135,8 +135,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
                 
                 group2.notify(queue: .main)
                 {
-                    scene.calculateBoostPlanetLand()
+                    scene.calculateIfBoostedOrLanded()
                     scene.startPushTimer()
+                    
                     scene.startCalculateVelocityTimer()
                 }
             }

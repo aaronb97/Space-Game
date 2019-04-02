@@ -41,21 +41,28 @@ class Math {
         return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2)))
     }
     
-    static func formatDistance(_ distance: Double) -> String
+    static func formatDistance(_ number: Double) -> String
     {
-        if distance > 1000000000
+        if number >= 1000000000000
         {
-            return String(format: "%1.1f billion km", distance / 1000000000)
+            return String(format: "%1.1f light years", number / 9.461e12)
         }
-        else if distance > 1000000
+        if number >= 1000000000
         {
-            return String(format: "%1.1f million km", distance / 1000000)
+            return String(format: "%1.1f billion km", number / 1000000000)
         }
-        
-        let numberFormatter = NumberFormatter()
-        numberFormatter.numberStyle = .decimal
-        return "\(numberFormatter.string(from: NSNumber(value: Int(distance)))!) km"
+        else if number >= 1000000
+        {
+            return String(format: "%1.1f million km", number / 1000000)
+        }
+        else
+        {
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            return "\(numberFormatter.string(from: NSNumber(value: Int(number)))!) km"
+        }
     }
+    
     
     static func formatTime(_ seconds: Int) -> String
     {
@@ -79,6 +86,10 @@ class Math {
         if minutes >= 1 || hours >= 1 || days >= 1
         {
             returnText.append("\(Int(minutes))m ")
+        }
+        else
+        {
+            return "Any second now"
         }
         //returnText.append("\(seconds % 60)s")
         return returnText
