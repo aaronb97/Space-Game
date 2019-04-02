@@ -20,6 +20,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var xVelocityLabel: UILabel!
     var yVelocityLabel: UILabel!
     var zVelocityLabel: UILabel!
+    var loadingLabel = UILabel()
 
     var ref: DatabaseReference!
     
@@ -53,7 +54,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
     }
     
-    
     var baseVelocity = 50000
     
     var rocket = SKSpriteNode()
@@ -70,6 +70,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
 
     var setACourseButton = UIButton()
     var goButton = UIButton()
+    var cancelButton = UIButton()
     
     var planetSelection: Planet!
     var travelingTo: Planet! {
@@ -93,6 +94,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var timestamp : Int! {
         didSet {
             setSpeedBoostTimeLabel()
+            setTimeToPlanetLabel()
         }
     }
     var nextSpeedBoostTime = Int.max
@@ -100,6 +102,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     var pushTimer: Timer!
     var calcVelocityTimer: Timer!
+    var loadDateTimer: Timer!
+    
     var localTime: TimeInterval!
     
     var traveledTo = [String: Bool]()
@@ -157,7 +161,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 }
                 else
                 {
-                    self.loadPlanetlistDatePlanets()
+                    self.loadEverything()
 
                 }
         })
@@ -173,19 +177,28 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         let setACourseButtonWidth = 130.0
         setACourseButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(setACourseButtonWidth / 2), y: self.view!.frame.height / 4, width: CGFloat(setACourseButtonWidth), height: CGFloat(30.0))
         formatButton(setACourseButton)
+        setACourseButton.isHidden = true
         
-        goButton.setTitle("Go!", for: .normal)
         let goButtonWidth = 150
         goButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(goButtonWidth / 2), y: planetListTableView.frame.maxY + 20, width: CGFloat(goButtonWidth), height: CGFloat(30.0))
         formatButton(goButton)
         goButton.isHidden = true
         
+        let cancelButtonWidth = 100
+        cancelButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(cancelButtonWidth / 2), y: planetListTableView.frame.maxY + 80, width: CGFloat(cancelButtonWidth), height: CGFloat(30.0))
+        formatButton(cancelButton)
+        cancelButton.isHidden = true
+        cancelButton.setTitle("Cancel", for: .normal)
+        
         versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String)"
         
-        versionLabel.frame = CGRect(x: 0.0, y: (self.view?.frame.maxY)! - 30, width: 300, height: 30)
+        versionLabel.frame = CGRect(x: 20.0, y: (self.view?.frame.maxY)! - 25, width: 300, height: 30)
         versionLabel.font = UIFont(name: versionLabel.font.fontName, size: 10)
         
-
+        speedLabel.isHidden = true
+        timeToSpeedBoostLabel.isHidden = true
+        timeToPlanetLabel.isHidden = true
+        
         formatNumberLabel(speedLabel)
         formatNumberLabel(timeToSpeedBoostLabel)
         formatNumberLabel(timeToPlanetLabel)
@@ -194,9 +207,15 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         self.view?.addSubview(timeToSpeedBoostLabel)
         self.view?.addSubview(timeToPlanetLabel)
         self.view?.addSubview(versionLabel)
+        self.view?.addSubview(cancelButton)
+        
+        loadingLabel.text = "Loading..."
+        loadingLabel.font = UIFont(name: loadingLabel.font.fontName, size: 15)
+        loadingLabel.frame = CGRect(x: (self.view?.center.x)! - Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2, y: (self.view?.center.y)!, width: Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font), height: 30)
+        formatNumberLabel(loadingLabel)
+        self.view?.addSubview(loadingLabel)
 
         localTime = Date().timeIntervalSinceReferenceDate
-        
     }
     
     
@@ -227,6 +246,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             speedLabel.isHidden = true
             timeToPlanetLabel.isHidden = true
             timeToSpeedBoostLabel.isHidden = true
+            cancelButton.isHidden = false
             
             for planet in planets {
                 planet.calculateDistance(x: positionX, y: positionY, z: positionZ)
@@ -241,6 +261,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             goButton.isHidden = true
             planetListTableView.isHidden = true
             setACourseButton.isHidden = false
+            cancelButton.isHidden = true
 
             speedLabel.isHidden = false
             timeToPlanetLabel.isHidden = false
@@ -259,6 +280,17 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             pushWillLandOnPlanetTime()
             //setSpeedBoostTimeLabel()
             
+        }
+        else if (sender == cancelButton)
+        {
+            goButton.isHidden = true
+            planetListTableView.isHidden = true
+            setACourseButton.isHidden = false
+            cancelButton.isHidden = true
+            
+            speedLabel.isHidden = false
+            timeToPlanetLabel.isHidden = false
+            timeToSpeedBoostLabel.isHidden = false
         }
     }
     
@@ -406,7 +438,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
     }
     
-    func loadPlanetlistDatePlanets()
+    func loadEverything()
     {
         let group2 = DispatchGroup()
         group2.enter()
@@ -433,15 +465,31 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     //self.calculateBoostPlanetLand()
                     self.drawObjects()
                     self.startPushTimer()
+                    self.calculateVelocities()
                     self.startCalculateVelocityTimer()
+                    self.startLoadDateTimer()
                     self.setSpeedLabel()
                     self.setSpeedBoostTimeLabel()
                     self.setTimeToPlanetLabel()
+                    self.makeStartElementsVisible()
                 })
             }
         }
+    }
+    
+    func makeStartElementsVisible()
+    {
+        rocket.isHidden = false
+        for planet in planets
+        {
+            planet.isHidden = false
+        }
         
-        
+        speedLabel.isHidden = false
+        timeToPlanetLabel.isHidden = false
+        timeToSpeedBoostLabel.isHidden = false
+        setACourseButton.isHidden = false
+        loadingLabel.isHidden = true
     }
     
     func getUserData(_ group: DispatchGroup)
@@ -508,7 +556,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     self.ref.child("users/\(self.email!)/data/nickname").setValue(textField.text!)
 
                     self.nicknameCleanup()
-                    self.loadPlanetlistDatePlanets()
+                    self.loadEverything()
                 }
                 
             }) { (error) in
@@ -591,7 +639,17 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         calcVelocityTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(calculateVelocities), userInfo: nil, repeats: true)
     }
     
-    func loadDate(_ group: DispatchGroup )
+    func startLoadDateTimer()
+    {
+        loadDateTimer = Timer.scheduledTimer(timeInterval: 60.0, target: self, selector: #selector(loadDateNoDispatch), userInfo: nil, repeats: true)
+    }
+    
+    @objc func loadDateNoDispatch()
+    {
+        loadDate(nil)
+    }
+    
+    func loadDate(_ group: DispatchGroup! )
     {
         var date : NSDate!
         
@@ -609,8 +667,10 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     self.dateString = dateFormatter.string(from: date as Date)
                 }
                 
-                
-                group.leave()
+                if (group != nil)
+                {
+                    group.leave()
+                }
                 
                 NSLog("date loaded")
             }) { (error) in
@@ -692,6 +752,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     {
         for planet in planets
         {
+            planet.isHidden = true
             if (planet.startingPlanet == true) //process the starting planet first
             {
                 rocket = SKSpriteNode(imageNamed: "rocket.png")

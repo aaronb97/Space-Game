@@ -43,7 +43,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
                 
                 view.ignoresSiblingOrder = true
                 view.showsFPS = true
-                view.showsNodeCount = true
+//                view.showsNodeCount = true
             }
         }
     }
@@ -73,19 +73,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         }
         else
         {
-//            email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
-//            self.window?.rootViewController?.view = SKView()
-//
-//            if let view = self.window?.rootViewController?.view as! SKView? {
-//
-//                scene = GameScene(size: view.bounds.size)
-//                scene.scaleMode = .aspectFill
-//                view.presentScene(scene)
-//
-//                view.ignoresSiblingOrder = true
-//                view.showsFPS = true
-//                view.showsNodeCount = true
-//            }
+
         }
         
         self.window!.makeKeyAndVisible()
@@ -107,6 +95,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         {
             scene.pushPositionToServer()
             scene.pushTimer.invalidate()
+            scene.loadDateTimer.invalidate()
             scene.calcVelocityTimer.invalidate()
         }
         print("resigned")
@@ -127,16 +116,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         if scene != nil {
             let group = DispatchGroup()
             group.enter()
-            scene.loadDate(group)
+            scene.loadDate(group)               //loads the date
             group.notify(queue: .main) {
                 let group2 = DispatchGroup()
                 group2.enter()
-                scene.getPositionFromServer(group2)
+                scene.getPositionFromServer(group2) //loads the position
                 
                 group2.notify(queue: .main)
                 {
                     scene.calculateIfBoostedOrLanded()
                     scene.startPushTimer()
+                    scene.startLoadDateTimer()
                     
                     scene.startCalculateVelocityTimer()
                 }
