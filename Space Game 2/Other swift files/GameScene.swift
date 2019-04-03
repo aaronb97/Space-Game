@@ -46,11 +46,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var travelingToPointX : Double!
     var travelingToPointY : Double!
     
-    
     var velocity = 0 {
         didSet {
             setSpeedLabel()
-
         }
     }
     
@@ -97,6 +95,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             setTimeToPlanetLabel()
         }
     }
+    
     var nextSpeedBoostTime = Int.max
     var willLandOnPlanetTime = Int.max
     
@@ -112,6 +111,63 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var timeToSpeedBoostLabel = UILabel()
     var timeToPlanetLabel = UILabel()
     var versionLabel = UILabel()
+    
+    var starfield1 = SKSpriteNode()
+    
+    let starfieldDict : [String: Any] = ["starfield1": ["alpha" :0.7, "resistance": 40000000.0],
+                                         "starfield2": ["alpha" :0.35, "resistance": 60000000.0],
+                                         "starfield3": ["alpha" :0.1, "resistance": 80000000.0]]
+    
+    func createStarfield()
+    {
+        for key in starfieldDict.keys
+        {
+            let subDict = starfieldDict[key] as! [String: Double]
+            for i in 0...1 {
+                for j in 0...1 {
+                    let starfield = SKSpriteNode()
+                    starfield.texture = SKTexture(imageNamed: key)
+                    starfield.name = key
+                    starfield.zPosition = -1
+                    starfield.alpha = CGFloat(subDict["alpha"]!)
+                    starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                    starfield.size = CGSize(width: self.frame.width, height: self.frame.height)
+                    starfield.position = CGPoint(x: self.frame.width * CGFloat(i) - self.frame.width / 2,
+                                                 y: self.frame.height * CGFloat(j) - self.frame.height / 2)
+                    self.addChild(starfield)
+                }
+            }
+        }
+    }
+    
+    func moveStarField()
+    {
+        for key in starfieldDict.keys
+        {
+            let subDict = starfieldDict[key] as! [String: Double]
+            self.enumerateChildNodes(withName: key, using: ({
+                (node, error) in
+                node.position = CGPoint(x: node.position.x - CGFloat(self.velocityX / subDict["resistance"]!), y: node.position.y - CGFloat(self.velocityY / subDict["resistance"]!))
+                if node.position.x > self.frame.width
+                {
+                    node.position.x = -self.frame.width
+                }
+                else if node.position.x < -self.frame.width
+                {
+                    node.position.x = self.frame.width
+                }
+                
+                if node.position.y > self.frame.height
+                {
+                    node.position.y = -self.frame.height
+                }
+                else if node.position.y < -self.frame.height
+                {
+                    node.position.y = self.frame.height
+                }
+            }))
+        }
+    }
     
     func setTimeToPlanetLabel()
     {
@@ -433,6 +489,26 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 }
                 planet.glowWidth = newScale
             }
+            if newScale > 1.5
+            {
+                for key in starfieldDict.keys
+                {
+                    self.enumerateChildNodes(withName: key, using: ({
+                        (node, error) in
+                        node.isHidden = true
+                    }))
+                }
+            }
+            else
+            {
+                for key in starfieldDict.keys
+                {
+                    self.enumerateChildNodes(withName: key, using: ({
+                        (node, error) in
+                        node.isHidden = false
+                    }))
+                }
+            }
             
             sender.scale = 1.0
         }
@@ -471,6 +547,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                     self.setSpeedLabel()
                     self.setSpeedBoostTimeLabel()
                     self.setTimeToPlanetLabel()
+                    self.createStarfield()
                     self.makeStartElementsVisible()
                 })
             }
@@ -560,7 +637,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 }
                 
             }) { (error) in
-                print(error.localizedDescription)
+                NSLog(error.localizedDescription)
             }
         }
         return true
@@ -659,7 +736,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 if let t = snap.value as? TimeInterval {
                     
                     self.timestamp = snap.value as? Int
-                    print("server timestamp: \(self.timestamp!)")
                     date = NSDate(timeIntervalSince1970: t/1000)
                     
                     let dateFormatter = DateFormatter()
@@ -728,9 +804,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
 //                    }
                     
                     planet.visitorDict = visitorDict
-                    
-                    print("loaded planet \(planet.name!)")
-                    group.leave()
+                                        group.leave()
                 }) { (error) in
                     NSLog(error.localizedDescription)
                     self.showAlertMessage(messageHeader: "Error loading planet values", messageBody: error.localizedDescription)
@@ -767,7 +841,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 
                 if (!coordinatesSet)
                 {
-                    print("coordinates not set")
+                    NSLog("coordinates not set")
                     coordinatesSet = true
                     positionX = planet.x
                     positionY = (planet.y + Int(planet.radius) * Int(coordMultiplier))
@@ -780,7 +854,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 }
                 else
                 {
-                    print("coordinates already set")
+                    NSLog("coordinates already set")
                     planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
                 }
             }
@@ -846,13 +920,12 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 self.willLandOnPlanetTime = coordDict["willLandOnPlanetTime"] as? Int ?? Int.max
 
                 let oldTimestamp = coordDict["timestamp"] as! Int
-                print("old timestamp: \(oldTimestamp)")
                 let millisecondsElapsed = self.timestamp - oldTimestamp
-                print("\(millisecondsElapsed) milliseconds since last load")
+                NSLog("\(millisecondsElapsed) milliseconds since last load")
 
-                print("x change: \(Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
-                print("y change: \(Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
-                print("z change: \(Int(self.velocityZ / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                NSLog("x change: \(Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                NSLog("y change: \(Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                NSLog("z change: \(Int(self.velocityZ / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
                 
                 self.positionX += Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed))
                 self.positionY += Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed))
@@ -882,7 +955,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
         else if (self.timestamp > self.nextSpeedBoostTime)
         {
-            print("speed boosted")
+            NSLog("speed boosted")
             velocity *= 2
             pushNextSpeedBoostTime()
             setTimeToPlanetLabel()
@@ -890,7 +963,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
         else
         {
-            print("speed not boosted, need to wait \(self.nextSpeedBoostTime - self.timestamp) milliseconds")
+            NSLog("speed not boosted, need to wait \(self.nextSpeedBoostTime - self.timestamp) milliseconds")
             self.setSpeedBoostTimeLabel()
             self.setTimeToPlanetLabel()
         }
@@ -998,6 +1071,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
                 planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
             }
             
+            moveStarField()
             checkTouchDown()
             
 //            xPositionLabel.text = "x position: \(positionX!)"
