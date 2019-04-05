@@ -14,10 +14,10 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3CF45AE9CBFEF1D70BBF3F064FE838F0"
-               BlueprintName = "FirebaseAuth"
+               BlueprintIdentifier = "617CAFBBE908531349234CBABE925F2A"
+               BlueprintName = "PocketSVG"
                ReferencedContainer = "container:Pods.xcodeproj"
-               BuildableName = "FirebaseAuth.framework">
+               BuildableName = "PocketSVG.framework">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>

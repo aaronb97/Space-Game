@@ -16,13 +16,12 @@ class Planet: SKShapeNode {
     var startingPlanet: Bool!
     var x: Int!
     var y: Int!
-    var z: Int!
     var distance: Double!
     var visitorDict: [String: Bool]!
     var color: UIColor!
     var type: String!
     
-    init(name: String, radius: Double, startingPlanet: Bool, x: Int, y: Int, z: Int, color: UIColor!, type: String!) {
+    init(name: String, radius: Double, startingPlanet: Bool, x: Int, y: Int, color: UIColor!, type: String!) {
         
         self.radius = radius
         self.startingPlanet = startingPlanet
@@ -31,27 +30,37 @@ class Planet: SKShapeNode {
         super.init()
         
         self.color = color
-        self.fillColor = (color != nil ? color : .moonColor)!
+        if let image = UIImage(named: name)
+        {
+            self.fillTexture = SKTexture.init(image: image)
+            self.fillColor = .white
+        }
+        else
+        {
+            self.fillColor = (color != nil ? color : .moonColor)!
+        }
         
-        self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius / 2, y: -radius / 2), size: CGSize(width: radius, height: radius)), transform: nil)
+        self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius, y: -radius), size: CGSize(width: radius * 2, height: radius * 2)), transform: nil)
         
-        self.strokeColor = (color != nil ? color!.lighter() : .moonColor)!
+        self.strokeColor = .white
+        //self.strokeColor = (color != nil ? color!.lighter() : .moonColor)!
         
         self.name = name
         
         self.x = x
         self.y = y
-        self.z = z
     }
     
-    func calculateDistance(x: Int, y: Int, z: Int)
+    func calculateDistance(x: Int, y: Int)
     {
         distance = Math.distance(x1: CGFloat(x),
                                  x2: CGFloat(self.x),
                                  y1: CGFloat(y),
-                                 y2: CGFloat(self.y),
-                                 z1: CGFloat(y),
-                                 z2: CGFloat(self.y)) / 100
+                                 y2: CGFloat(self.y)) / 100 - radius
+        if (distance < 0)
+        {
+            distance = 0
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {

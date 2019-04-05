@@ -26,7 +26,11 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDele
 
         signInButton.frame = CGRect(x: (self.view.frame.size.width - SIGNIN_WIDTH) / 2, y: self.view.frame.size.height - 100, width: SIGNIN_WIDTH, height: SIGNIN_HEIGHT)
         self.view.addSubview(signInButton)
-
+        
+        let backgroundImage = UIImageView(frame: UIScreen.main.bounds)
+        backgroundImage.image = UIImage(named: "spacegameLaunch")
+        backgroundImage.contentMode = UIView.ContentMode.scaleAspectFill
+        self.view.insertSubview(backgroundImage, at: 0)
     }
 
     override var prefersStatusBarHidden: Bool {

@@ -10,5 +10,6 @@ target 'Space Game 2' do
   pod 'Firebase/Database'
   pod 'Firebase/Auth'
   pod 'GoogleSignIn'
+  pod 'PocketSVG', '~> 2.0'
 
 end

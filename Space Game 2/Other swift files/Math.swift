@@ -36,11 +36,6 @@ class Math {
         return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)))
     }
     
-    static func distance(x1: CGFloat, x2: CGFloat, y1: CGFloat, y2: CGFloat, z1: CGFloat, z2: CGFloat) -> Double
-    {
-        return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) + pow(z2 - z1, 2)))
-    }
-    
     static func formatDistance(_ number: Double) -> String
     {
         if number >= 1000000000000
@@ -70,20 +65,26 @@ class Math {
         
         var minutes = Double(seconds) / 60.0
         var hours = Double(minutes) / 60.0
-        let days = Double(hours) / 24
+        var days = Double(hours) / 24
+        let years = Double(days) / 365
         //let reducedSeconds = Double(seconds).truncatingRemainder(dividingBy: 60.0)
+        days = days.truncatingRemainder(dividingBy: 365.0)
         minutes = minutes.truncatingRemainder(dividingBy: 60.0)
         hours = hours.truncatingRemainder(dividingBy: 24.0)
         
-        if days >= 1
+        if years >= 1
+        {
+            returnText.append("\(Int(years))y ")
+        }
+        if years >= 1 || days >= 1
         {
             returnText.append("\(Int(days))d ")
         }
-        if hours >= 1 || days >= 1
+        if years >= 1 || hours >= 1 || days >= 1
         {
             returnText.append("\(Int(hours))h ")
         }
-        if minutes >= 1 || hours >= 1 || days >= 1
+        if  years >= 1 || minutes >= 1 || hours >= 1 || days >= 1
         {
             returnText.append("\(Int(minutes))m ")
         }
