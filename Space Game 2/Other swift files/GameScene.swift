@@ -40,9 +40,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var velocityX = 0.0
     var velocityY = 0.0
     
-    var travelingToPointX : Double!
-    var travelingToPointY : Double!
-    
     var velocity = 0 {
         didSet {
             setSpeedLabel()
@@ -332,12 +329,10 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             planetSelection = nil
             currentPlanet = nil
 
-            
-            setTravelingToPositions()
+            //setTravelingToPositions()
             calculateVelocities()
             pushNextSpeedBoostTime()
             pushWillLandOnPlanetTime()
-            //setSpeedBoostTimeLabel()
             
         }
         else if (sender == cancelButton)
@@ -383,9 +378,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     @objc func calculateVelocities()
     {
-        if (travelingTo != nil)
+        if let planet = travelingTo
         {
-            let theta = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: CGFloat(travelingToPointX), y2: CGFloat(travelingToPointY))
+            let theta = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: planet.position.x, y2: planet.position.y)
             rocket.zRotation = theta - .pi / 2
             
             velocityX = Double(cos(theta) * CGFloat(velocity)) * coordMultiplier
@@ -587,6 +582,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         timeToSpeedBoostLabel.isHidden = true
         setACourseButton.isHidden = true
         loadingLabel.isHidden = false
+        planetListTableView.isHidden = true
     }
     
     func getUserData(_ group: DispatchGroup)
