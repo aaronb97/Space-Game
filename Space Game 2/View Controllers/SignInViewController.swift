@@ -47,6 +47,7 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDele
         self.view.addSubview(signInButton)
         self.view.addSubview(stayLoggedInSwitch)
         self.view.addSubview(switchLabel)
+        UserDefaults.standard.set(false, forKey: "StaySignedIn")
     }
 
     override var prefersStatusBarHidden: Bool {

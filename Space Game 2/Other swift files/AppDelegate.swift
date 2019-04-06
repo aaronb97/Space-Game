@@ -14,7 +14,7 @@ import GameplayKit
 var email: String!
 var scene: GameScene!
 var ref: DatabaseReference!
-let signInViewController = SignInViewController()
+var signInViewController = SignInViewController()
 
 
 @UIApplicationMain
@@ -36,11 +36,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             }
             print("signed in")
             
-            UserDefaults.standard.set(signInViewController.switchLabel.isEnabled, forKey: "StaySignedIn")
+            UserDefaults.standard.set(signInViewController.stayLoggedInSwitch.isOn, forKey: "StaySignedIn")
             
             self.moveToGameScene()
         }
     }
+    
+    
     
     func moveToGameScene()
     {
@@ -66,7 +68,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         print("launching")
         FirebaseApp.configure()
-        //Database.database().isPersistenceEnabled = true
         
         ref = Database.database().reference()
         
@@ -79,17 +80,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         
         self.window!.rootViewController = signInViewController
         
-//        Auth.auth().addStateDidChangeListener { (auth, user) in
-//            //if user == nil
-//            //{
-//                signInViewController.addSignInButtons()
-//            //}
-//        }
-        
         self.window!.makeKeyAndVisible()
-
         
         return true
+    }
+    
+    func showSignInScreen()
+    {
+        self.window?.rootViewController?.view = UIView()
+        signInViewController = SignInViewController()
+        self.window?.rootViewController = signInViewController
+        signInViewController.addSubViews()
+        scene = nil
     }
     
     @available(iOS 9.0, *)
@@ -116,6 +118,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         if UserDefaults.standard.bool(forKey: "StaySignedIn") == false
         {
             GIDSignIn.sharedInstance()?.signOut()
+            print("signed out?")
         }
         print("entered background")
     }
@@ -128,23 +131,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         if scene != nil {
-//            let group = DispatchGroup()
-//            group.enter()
-//            scene.loadDate(group)               //loads the date
-//            group.notify(queue: .main) {
-//                let group2 = DispatchGroup()
-//                group2.enter()
-//                scene.getPositionFromServer(group2) //loads the position
-//
-//                group2.notify(queue: .main)
-//                {
-//                    scene.calculateIfBoostedOrLanded()
-//                    scene.startPushTimer()
-//                    scene.startLoadDateTimer()
-//
-//                    scene.startCalculateVelocityTimer()
-//                }
-//            }
+
             scene.loadEverything()
             scene.localTime = Date().timeIntervalSinceReferenceDate
         }
@@ -158,8 +145,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         if UserDefaults.standard.bool(forKey: "StaySignedIn") == false
         {
             GIDSignIn.sharedInstance()?.signOut()
+            print("signed out?")
         }
-        scene.pushPositionToServer()
+        if scene != nil
+        {
+            scene.pushPositionToServer()
+        }
         print("terminated")
     }
 

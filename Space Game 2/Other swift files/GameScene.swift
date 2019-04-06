@@ -10,6 +10,8 @@ import SpriteKit
 import GameplayKit
 import Firebase
 import FirebaseDatabase
+import GoogleSignIn
+
 
 class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
     
@@ -63,6 +65,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var setACourseButton = UIButton()
     var goButton = UIButton()
     var cancelButton = UIButton()
+    let menuButton = UIButton()
     
     var planetSelection: Planet!
     var travelingTo: Planet! {
@@ -85,8 +88,11 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var email: String!
     var timestamp : Int! {
         didSet {
-            setSpeedBoostTimeLabel()
-            setTimeToPlanetLabel()
+            if view != nil
+            {
+                setSpeedBoostTimeLabel()
+                setTimeToPlanetLabel()
+            }
         }
     }
     
@@ -246,6 +252,9 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         cancelButton.isHidden = true
         cancelButton.setTitle("Cancel", for: .normal)
         
+        menuButton.setTitle("Sign Out", for: .normal)
+        menuButton.frame = CGRect(x: (self.view?.frame.maxX)! - 100, y: 10, width: 90, height: 30)
+        
         versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String)"
         
         versionLabel.frame = CGRect(x: 20.0, y: (self.view?.frame.maxY)! - 25, width: 300, height: 30)
@@ -255,20 +264,22 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         timeToSpeedBoostLabel.isHidden = true
         timeToPlanetLabel.isHidden = true
         
-        formatNumberLabel(speedLabel)
-        formatNumberLabel(timeToSpeedBoostLabel)
-        formatNumberLabel(timeToPlanetLabel)
-        formatNumberLabel(versionLabel)
+        formatLabel(speedLabel)
+        formatLabel(timeToSpeedBoostLabel)
+        formatLabel(timeToPlanetLabel)
+        formatLabel(versionLabel)
+        formatButton(menuButton)
         self.view?.addSubview(speedLabel)
         self.view?.addSubview(timeToSpeedBoostLabel)
         self.view?.addSubview(timeToPlanetLabel)
         self.view?.addSubview(versionLabel)
         self.view?.addSubview(cancelButton)
+        self.view?.addSubview(menuButton)
         
         loadingLabel.text = "Loading..."
         loadingLabel.font = UIFont(name: loadingLabel.font.fontName, size: 15)
         loadingLabel.frame = CGRect(x: (self.view?.center.x)! - Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2, y: (self.view?.center.y)!, width: Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font), height: 30)
-        formatNumberLabel(loadingLabel)
+        formatLabel(loadingLabel)
         self.view?.addSubview(loadingLabel)
 
         localTime = Date().timeIntervalSinceReferenceDate
@@ -276,7 +287,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     
     
-    func formatNumberLabel(_ label: UILabel)
+    func formatLabel(_ label: UILabel)
     {
         label.textColor = UIColor.white
         //label.font = UIFont(name: "Courier", size: 15)
@@ -295,7 +306,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     @objc func buttonPressed(sender: UIButton)
     {
-        if (sender == setACourseButton)
+        if sender == setACourseButton
         {
             setACourseButton.isHidden = true
             planetListTableView.isHidden = false
@@ -312,7 +323,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             
             planetListTableView.reloadData()
         }
-        else if (sender == goButton)
+        else if sender == goButton
         {
             goButton.isHidden = true
             planetListTableView.isHidden = true
@@ -329,13 +340,12 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             planetSelection = nil
             currentPlanet = nil
 
-            //setTravelingToPositions()
             calculateVelocities()
             pushNextSpeedBoostTime()
             pushWillLandOnPlanetTime()
             
         }
-        else if (sender == cancelButton)
+        else if sender == cancelButton
         {
             goButton.isHidden = true
             planetListTableView.isHidden = true
@@ -345,6 +355,17 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             speedLabel.isHidden = false
             timeToPlanetLabel.isHidden = false
             timeToSpeedBoostLabel.isHidden = false
+        }
+        else if sender == menuButton
+        {
+            for planet in planets
+            {
+                planet.fillTexture = nil
+            }
+            pushPositionToServer()
+            GIDSignIn.sharedInstance()?.signOut()
+            UserDefaults.standard.set(false, forKey: "StaySignedIn")
+            appDelegate.showSignInScreen()
         }
     }
     
@@ -569,6 +590,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         timeToSpeedBoostLabel.isHidden = false
         setACourseButton.isHidden = false
         loadingLabel.isHidden = true
+        menuButton.isHidden = false
     }
     
     func makeStartElementsInvisible()
@@ -583,6 +605,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         setACourseButton.isHidden = true
         loadingLabel.isHidden = false
         planetListTableView.isHidden = true
+        menuButton.isHidden = false
     }
     
     func getUserData(_ group: DispatchGroup)
@@ -980,6 +1003,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             self.timeToSpeedBoostLabel.text = "Speed boost available in \(Math.formatTime(Int(Double(self.nextSpeedBoostTime - self.timestamp) / 1000)))"
             
         }
+        
         timeToSpeedBoostLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.timeToSpeedBoostLabel.text!, font: self.timeToSpeedBoostLabel.font) / 2,
                                              y: speedLabel.frame.maxY + 10,
                                              width: 300,
@@ -1071,7 +1095,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     }
 
     override func update(_ currentTime: TimeInterval) {
-        
         let newTime = Date().timeIntervalSinceReferenceDate
         let timeDiff = newTime - localTime
         localTime = newTime
@@ -1175,11 +1198,11 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
 
         
-        formatNumberLabel(xPositionLabel)
-        formatNumberLabel(yPositionLabel)
-        formatNumberLabel(zPositionLabel)
-        formatNumberLabel(xVelocityLabel)
-        formatNumberLabel(yVelocityLabel)
+        formatLabel(xPositionLabel)
+        formatLabel(yPositionLabel)
+        formatLabel(zPositionLabel)
+        formatLabel(xVelocityLabel)
+        formatLabel(yVelocityLabel)
         
         self.view?.addSubview(xPositionLabel)
         self.view?.addSubview(yPositionLabel)
