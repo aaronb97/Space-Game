@@ -14,12 +14,18 @@ import GameplayKit
 var email: String!
 var scene: GameScene!
 var ref: DatabaseReference!
+let signInViewController = SignInViewController()
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     
     func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
-        guard let authentication = user.authentication else { return }
+        guard let gUser = user else {
+            signInViewController.addSubViews()
+            return
+        }
+        guard let authentication = gUser.authentication else { return }
         let credential = GoogleAuthProvider.credential(withIDToken: authentication.idToken,
                                                        accessToken: authentication.accessToken)
         
@@ -30,21 +36,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             }
             print("signed in")
             
+            UserDefaults.standard.set(signInViewController.switchLabel.isEnabled, forKey: "StaySignedIn")
             
-            self.window?.rootViewController?.view = SKView()
+            self.moveToGameScene()
+        }
+    }
+    
+    func moveToGameScene()
+    {
+        self.window?.rootViewController?.view = SKView()
+        
+        email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
+        
+        if let view = self.window?.rootViewController?.view as! SKView? {
             
-            email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
+            scene = GameScene(size: view.bounds.size)
+            scene.scaleMode = .aspectFill
+            view.presentScene(scene)
             
-            if let view = self.window?.rootViewController?.view as! SKView? {
-                
-                scene = GameScene(size: view.bounds.size)
-                scene.scaleMode = .aspectFill
-                view.presentScene(scene)
-                
-                view.ignoresSiblingOrder = true
-                view.showsFPS = true
-                view.showsNodeCount = true
-            }
+            view.ignoresSiblingOrder = true
+            view.showsFPS = true
+            view.showsNodeCount = true
         }
     }
 
@@ -60,21 +72,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         
         GIDSignIn.sharedInstance().clientID = FirebaseApp.app()?.options.clientID
         GIDSignIn.sharedInstance().delegate = self
+        GIDSignIn.sharedInstance()?.signInSilently()
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window!.backgroundColor = UIColor.spaceColor
         
-        let signInViewController = SignInViewController()
         self.window!.rootViewController = signInViewController
         
-        if (Auth.auth().currentUser == nil)
-        {
-            
-        }
-        else
-        {
-
-        }
+//        Auth.auth().addStateDidChangeListener { (auth, user) in
+//            //if user == nil
+//            //{
+//                signInViewController.addSignInButtons()
+//            //}
+//        }
         
         self.window!.makeKeyAndVisible()
 
@@ -102,7 +112,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        
+        print(UserDefaults.standard.bool(forKey: "StaySignedIn"))
+        if UserDefaults.standard.bool(forKey: "StaySignedIn") == false
+        {
+            GIDSignIn.sharedInstance()?.signOut()
+        }
         print("entered background")
     }
 
@@ -141,6 +155,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     
 
     func applicationWillTerminate(_ application: UIApplication) {
+        if UserDefaults.standard.bool(forKey: "StaySignedIn") == false
+        {
+            GIDSignIn.sharedInstance()?.signOut()
+        }
         scene.pushPositionToServer()
         print("terminated")
     }
