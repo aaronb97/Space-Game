@@ -349,6 +349,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             timeToSpeedBoostLabel.isHidden = false
             menuButton.isHidden = false
             
+            willLandOnPlanetTime = Int.max
+            
             velocity = calcSpeed()
 
             travelingTo = planetSelection
