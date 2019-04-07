@@ -79,14 +79,12 @@ PODS:
     - nanopb/encode (= 0.3.901)
   - nanopb/decode (0.3.901)
   - nanopb/encode (0.3.901)
-  - PocketSVG (2.4.2)
 
 DEPENDENCIES:
   - Firebase/Auth
   - Firebase/Core
   - Firebase/Database
   - GoogleSignIn
-  - PocketSVG (~> 2.0)
 
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
@@ -104,7 +102,6 @@ SPEC REPOS:
     - GTMSessionFetcher
     - leveldb-library
     - nanopb
-    - PocketSVG
 
 SPEC CHECKSUMS:
   Firebase: c60d49e9c2630875a96207d15e2affb8364996d1
@@ -121,8 +118,7 @@ SPEC CHECKSUMS:
   GTMSessionFetcher: 32aeca0aa144acea523e1c8e053089dec2cb98ca
   leveldb-library: 08cba283675b7ed2d99629a4bc5fd052cd2bb6a5
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
-  PocketSVG: c30139829206a43df2ec203880e3970531facba7
 
-PODFILE CHECKSUM: d7458201cf496f11d15115c93969929d5aafe742
+PODFILE CHECKSUM: 902ce9336c05bebc0644ffbd0234294df1fafc0b
 
 COCOAPODS: 1.5.3

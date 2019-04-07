@@ -30,15 +30,12 @@ class Planet: SKShapeNode {
         super.init()
         
         self.color = color
-        if let image = UIImage(named: name)
-        {
-            self.fillTexture = SKTexture.init(image: image)
-            self.fillColor = .white
-        }
-        else
-        {
-            self.fillColor = (color != nil ? color : .moonColor)!
-        }
+        
+        //self.fillTexture = SKTexture.init(image: image)
+        self.fillColor = .white
+        
+        self.fillColor = (color != nil ? color : .moonColor)!
+        
         
         self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius, y: -radius), size: CGSize(width: radius * 2, height: radius * 2)), transform: nil)
         
@@ -90,6 +87,7 @@ extension UIColor {
         }
     }
     
-    static let spaceColor = Math.hexStringToUIColor(hex: "0b1435")
+    //static let spaceColor = Math.hexStringToUIColor(hex: "0b1435")
+    static let spaceColor = Math.hexStringToUIColor(hex: "000000")
     static let moonColor = Math.hexStringToUIColor(hex: "adadad")
 }

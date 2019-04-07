@@ -90,9 +90,8 @@ class Math {
         }
         else
         {
-            return "Any second now"
+            return "less than a minute"
         }
-        //returnText.append("\(seconds % 60)s")
         return returnText
     }
     

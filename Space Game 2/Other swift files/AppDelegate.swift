@@ -36,7 +36,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             }
             print("signed in")
             
-            UserDefaults.standard.set(signInViewController.stayLoggedInSwitch.isOn, forKey: "StaySignedIn")
+            if !signInViewController.stayLoggedInSwitch.isHidden
+            {
+                UserDefaults.standard.set(signInViewController.stayLoggedInSwitch.isOn, forKey: "StaySignedIn")
+            }
             
             self.moveToGameScene()
         }
@@ -109,6 +112,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             scene.pushTimer.invalidate()
             scene.loadDateTimer.invalidate()
             scene.calcVelocityTimer.invalidate()
+            scene.loadPlanetImagesTimer.invalidate()
         }
         print("resigned")
     }
@@ -145,7 +149,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         if UserDefaults.standard.bool(forKey: "StaySignedIn") == false
         {
             GIDSignIn.sharedInstance()?.signOut()
-            print("signed out?")
         }
         if scene != nil
         {

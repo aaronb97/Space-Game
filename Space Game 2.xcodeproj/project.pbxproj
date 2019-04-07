@@ -16,9 +16,9 @@
 		4ECFDEEB22447B2E002457BC /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEA22447B2E002457BC /* GameScene.swift */; };
 		4ECFDEED22447B2E002457BC /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEC22447B2E002457BC /* GameViewController.swift */; };
 		4ECFDEF022447B2E002457BC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEE22447B2E002457BC /* Main.storyboard */; };
-		4ECFDEF222447B31002457BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEF122447B31002457BC /* Assets.xcassets */; };
 		4ECFDEF522447B31002457BC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEF322447B31002457BC /* LaunchScreen.storyboard */; };
 		4ECFDEFD22454884002457BC /* GoogleService-Info-Old.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEFC22454884002457BC /* GoogleService-Info-Old.plist */; };
+		4EDEF5A6225924DE00462DCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EDEF5A5225924DE00462DCD /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,10 +32,10 @@
 		4ECFDEEA22447B2E002457BC /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
 		4ECFDEEC22447B2E002457BC /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
 		4ECFDEEF22447B2E002457BC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		4ECFDEF122447B31002457BC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4ECFDEF422447B31002457BC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4ECFDEF622447B31002457BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4ECFDEFC22454884002457BC /* GoogleService-Info-Old.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info-Old.plist"; sourceTree = "<group>"; };
+		4EDEF5A5225924DE00462DCD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E68F82533FA6DF165739AF12 /* Pods_Space_Game_2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Space_Game_2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC3B3C678C6FFE31225338A8 /* Pods-Space Game 2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Space Game 2.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Space Game 2/Pods-Space Game 2.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -105,10 +105,10 @@
 				4E81B4DB224FC7C00010FA9C /* Other swift files */,
 				4E81B4DA224FC79B0010FA9C /* Storyboards */,
 				4E81B4D8224FC75D0010FA9C /* View Controllers */,
-				4ECFDEF122447B31002457BC /* Assets.xcassets */,
 				4ECFDEF622447B31002457BC /* Info.plist */,
 				4E81B4DF225278AC0010FA9C /* GoogleService-Info.plist */,
 				4ECFDEFC22454884002457BC /* GoogleService-Info-Old.plist */,
+				4EDEF5A5225924DE00462DCD /* Assets.xcassets */,
 			);
 			path = "Space Game 2";
 			sourceTree = "<group>";
@@ -194,9 +194,9 @@
 			files = (
 				4E81B4E0225278AD0010FA9C /* GoogleService-Info.plist in Resources */,
 				4ECFDEF022447B2E002457BC /* Main.storyboard in Resources */,
-				4ECFDEF222447B31002457BC /* Assets.xcassets in Resources */,
 				4ECFDEFD22454884002457BC /* GoogleService-Info-Old.plist in Resources */,
 				4ECFDEF522447B31002457BC /* LaunchScreen.storyboard in Resources */,
+				4EDEF5A6225924DE00462DCD /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -237,7 +237,6 @@
 				"${BUILT_PRODUCTS_DIR}/GTMSessionFetcher/GTMSessionFetcher.framework",
 				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
 				"${BUILT_PRODUCTS_DIR}/GoogleUtilities/GoogleUtilities.framework",
-				"${BUILT_PRODUCTS_DIR}/PocketSVG/PocketSVG.framework",
 				"${BUILT_PRODUCTS_DIR}/leveldb-library/leveldb.framework",
 				"${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework",
 			);
@@ -248,7 +247,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMSessionFetcher.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleUtilities.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PocketSVG.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/leveldb.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
 			);
@@ -441,7 +439,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = SZ3Q2Y73R2;
 				INFOPLIST_FILE = "Space Game 2/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -462,7 +460,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = SZ3Q2Y73R2;
 				INFOPLIST_FILE = "Space Game 2/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

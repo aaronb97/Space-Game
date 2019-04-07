@@ -35,6 +35,7 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDele
         switchLabel.frame = CGRect(x: CGFloat(self.view.frame.size.width / 2)  - CGFloat(Math.textWidth(text: switchLabel.text!, font: switchLabel.font) / 2),
                                    y: CGFloat(stayLoggedInSwitch.frame.maxY + 5), width: CGFloat(Math.textWidth(text: switchLabel.text!, font: switchLabel.font)), height: 20)
         switchLabel.textColor = .white
+        stayLoggedInSwitch.isHidden = true
         
         let backgroundImage = UIImageView(frame: UIScreen.main.bounds)
         backgroundImage.image = UIImage(named: "spacegameLaunch")
@@ -47,6 +48,7 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDele
         self.view.addSubview(signInButton)
         self.view.addSubview(stayLoggedInSwitch)
         self.view.addSubview(switchLabel)
+        stayLoggedInSwitch.isHidden = false
         UserDefaults.standard.set(false, forKey: "StaySignedIn")
     }
 
