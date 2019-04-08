@@ -13,9 +13,11 @@ import FirebaseDatabase
 import GoogleSignIn
 
 
-class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewDataSource {
+class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true]
+    
+    var testView: UIView!
     
     var xPositionLabel: UILabel!
     var yPositionLabel: UILabel!
@@ -26,15 +28,22 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
 
     var ref: DatabaseReference!
     
-    var username: String!
+    var username: String! {
+        didSet {
+            if let name = username
+            {
+                usernameLabel.text = "Signed in as \(name)"
+            }
+            else
+            {
+                usernameLabel.text = ""
+            }
+        }
+    }
     
     var usernameLabel = UILabel()
-    var enterUsernameLabel = UILabel()
-    var invalidUsernameLabel = UILabel()
     
     let appDelegate = UIApplication.shared.delegate as! AppDelegate
-    
-    var textField = UITextField()
     
     var dateString : String!
     
@@ -117,14 +126,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     var timeToSpeedBoostLabel = UILabel()
     var timeToPlanetLabel = UILabel()
     var versionLabel = UILabel()
-    
-    
-    //let starfieldDict : [String: Any] = ["starfield1": ["alpha" :0.7, "resistance": 40000000.0],
-    //                                     "starfield2": ["alpha" :0.35, "resistance": 60000000.0],
-     //                                    "starfield3": ["alpha" :0.1, "resistance": 80000000.0]]
-    
-    //let starfieldDict : [String: Any] = ["starfield4": ["alpha" : 1.0, "resistance": 1000000.0],
-    //                                     "starfield5": ["alpha" : 1.0, "resistance": 2000000.0]]
     
     let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 3000000.0]]
     
@@ -212,7 +213,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     override func didMove(to view: SKView) {
         
-        
         self.view?.backgroundColor = .spaceColor
         self.view?.window?.backgroundColor = .spaceColor
         self.backgroundColor = .spaceColor
@@ -242,12 +242,19 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         
         
         
-        planetListTableView = UITableView(frame: CGRect(x:20, y: 20 , width: self.view!.frame.width - 40, height: self.view!.frame.height / 1.5))
+
         planetListTableView.rowHeight = CGFloat(100)
         self.scene?.view?.addSubview(planetListTableView)
         planetListTableView.delegate = self
         planetListTableView.dataSource = self
         planetListTableView.isHidden = true
+        
+        planetListTableView.translatesAutoresizingMaskIntoConstraints = false
+        planetListTableView.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
+        planetListTableView.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
+        planetListTableView.topAnchor.constraint(equalTo: view.safeTopAnchor, constant: 15).isActive = true
+        planetListTableView.bottomAnchor.constraint(equalTo: view.safeBottomAnchor, constant: -160).isActive = true
+        
         
         setACourseButton.setTitle("Set a Course", for: .normal)
         let setACourseButtonWidth = 130.0
@@ -255,24 +262,31 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         formatButton(setACourseButton)
         setACourseButton.isHidden = true
         
-        let goButtonWidth = 150
-        goButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(goButtonWidth / 2), y: planetListTableView.frame.maxY + 20, width: CGFloat(goButtonWidth), height: CGFloat(30.0))
+        self.view?.addSubview(goButton)
         formatButton(goButton)
         goButton.isHidden = true
+        goButton.translatesAutoresizingMaskIntoConstraints = false
+        goButton.topAnchor.constraint(equalTo: planetListTableView.bottomAnchor, constant: 20).isActive = true
+        goButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        goButton.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        goButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
-        let cancelButtonWidth = 100
-        cancelButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(cancelButtonWidth / 2), y: planetListTableView.frame.maxY + 80, width: CGFloat(cancelButtonWidth), height: CGFloat(30.0))
+        self.view?.addSubview(cancelButton)
         formatButton(cancelButton)
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        cancelButton.topAnchor.constraint(equalTo: planetListTableView.bottomAnchor, constant: 70).isActive = true
+        cancelButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        cancelButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        cancelButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         cancelButton.isHidden = true
         cancelButton.setTitle("Cancel", for: .normal)
         
-        menuButton.setTitle("Sign Out", for: .normal)
-        menuButton.frame = CGRect(x: (self.view?.frame.maxX)! - 100, y: 10, width: 90, height: 30)
         
-        versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String)"
-        
+        versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String) (build \(Bundle.main.infoDictionary!["CFBundleVersion"] as! String))"
         versionLabel.frame = CGRect(x: 20.0, y: (self.view?.frame.maxY)! - 25, width: 300, height: 30)
         versionLabel.font = UIFont(name: versionLabel.font.fontName, size: 10)
+        
+        usernameLabel.font = UIFont(name: versionLabel.font.fontName, size: 12)
         
         speedLabel.isHidden = true
         timeToSpeedBoostLabel.isHidden = true
@@ -282,17 +296,41 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         formatLabel(timeToSpeedBoostLabel)
         formatLabel(timeToPlanetLabel)
         formatLabel(versionLabel)
+        formatLabel(usernameLabel)
+        
         formatButton(menuButton)
+        
         self.view?.addSubview(speedLabel)
         self.view?.addSubview(timeToSpeedBoostLabel)
         self.view?.addSubview(timeToPlanetLabel)
         self.view?.addSubview(versionLabel)
-        self.view?.addSubview(cancelButton)
         self.view?.addSubview(menuButton)
+        self.view?.addSubview(usernameLabel)
+        self.view?.addSubview(setACourseButton)
+        
+        usernameLabel.translatesAutoresizingMaskIntoConstraints = false
+        usernameLabel.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
+        usernameLabel.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
+        
+        menuButton.setTitle("Sign Out", for: .normal)
+        menuButton.translatesAutoresizingMaskIntoConstraints = false
+        menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
+        menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
+        menuButton.widthAnchor.constraint(equalToConstant: Math.textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
+        menuButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+
+        
+        versionLabel.translatesAutoresizingMaskIntoConstraints = false
+        versionLabel.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
+        versionLabel.bottomAnchor.constraint(equalTo: view.safeBottomAnchor).isActive = true
+
         
         loadingLabel.text = "Loading..."
         loadingLabel.font = UIFont(name: loadingLabel.font.fontName, size: 15)
-        loadingLabel.frame = CGRect(x: (self.view?.center.x)! - Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2, y: (self.view?.center.y)!, width: Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font), height: 30)
+        loadingLabel.frame = CGRect(x: (self.view?.center.x)! - Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2,
+                                    y: (self.view?.center.y)!,
+                                    width: Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font),
+                                    height: 30)
         formatLabel(loadingLabel)
         self.view?.addSubview(loadingLabel)
 
@@ -310,8 +348,8 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         button.setTitleColor(UIColor.white, for: .normal)
         button.tintColor = UIColor.black
         button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
-        button.backgroundColor = UIColor(white: 1, alpha: 0.0)
-        button.layer.cornerRadius = 10
+        button.backgroundColor = Math.hexStringToUIColor(hex: "000000").withAlphaComponent(0.2)
+        button.layer.cornerRadius = 12
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.white.cgColor
     }
@@ -427,20 +465,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
 
     }
-    
-//    func setTravelingToPositions() {
-//        if (travelingTo != nil)
-//        {
-//            let Bx = rocket.position.x
-//            let By = rocket.position.y
-//            let Ax = travelingTo.position.x
-//            let Ay = travelingTo.position.y
-//            let r = travelingTo.radius
-//            let denom = sqrt(pow(Bx - Ax, 2) + pow(By - Ay, 2))
-//            travelingToPointX = Double(Ax + CGFloat(r!) * (Bx - Ax) / denom)
-//            travelingToPointY = Double(Ay + CGFloat(r!) * (By - Ay) / denom)
-//        }
-//    }
     
     func checkTouchDown()
     {
@@ -568,7 +592,7 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
             group.notify(queue: .main) {
                 self.loadPlanets({                      //part 3: load planets
                     
-                    self.addGameViews()
+                    //self.addGameViews()
                     self.setCurrentAndTravelingPlanets()
                     
                     self.drawObjects()
@@ -617,7 +641,6 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         self.removeAllChildren()
         planetDict = [String: Planet]()
         
-        
         speedLabel.isHidden = true
         timeToPlanetLabel.isHidden = true
         timeToSpeedBoostLabel.isHidden = true
@@ -646,111 +669,30 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         }
     }
     
-    @objc func textFieldDidChange(textField: UITextField) {
-        usernameLabel.text = String(textField.text!.trimmingCharacters(in: .whitespacesAndNewlines).prefix(20))
-        textField.text = usernameLabel.text
-
-        usernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: usernameLabel.text!, font: usernameLabel.font) / 2,
-                                     y : enterUsernameLabel.frame.maxY + 3,
-                                     width: Math.textWidth(text: usernameLabel.text!, font: usernameLabel.font),
-                                     height: 30.0)
-        
-        invalidUsernameLabel.text = ""
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        
-        if (usernameLabel.text == "")
-        {
-            self.invalidUsernameLabel.text = "Username can't be empty"
-            self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
-                                                     y : self.usernameLabel.frame.maxY + 3,
-                                                     width: Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
-                                                     height: 30.0)
-        }
-        else
-        {
-            ref.child("nicknames").child(usernameLabel.text!).observeSingleEvent(of: .value, with: { (snapshot) in
-                
-                if (snapshot.exists() && (snapshot.value as! Bool) == true)  //username already exits
-                {
-                    self.invalidUsernameLabel.text = "Username already taken"
-                    self.invalidUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font) / 2,
-                                                 y : self.usernameLabel.frame.maxY + 3,
-                                                 width: Math.textWidth(text: self.invalidUsernameLabel.text!, font: self.invalidUsernameLabel.font),
-                                                 height: 30.0)
-                }
-                else
-                {                   //username doesn't exist
-                    textField.resignFirstResponder()
-                    self.username = textField.text
-                    self.ref.child("nicknames/\(self.username!)").setValue(true)
-                    self.ref.child("users/\(self.email!)/data/nickname").setValue(textField.text!)
-
-                    self.nicknameCleanup()
-                    self.loadEverything()
-                }
-                
-            }) { (error) in
-                NSLog(error.localizedDescription)
-            }
-        }
-        return true
-    }
-    
     
     func nicknameSetup()
     {
-        textField = UITextField()
-        textField.addTarget(self, action: #selector(textFieldDidChange(textField: )), for: .editingChanged)
-        textField.frame = CGRect(x: -50, y: -50, width: 0, height: 0)
-        self.view?.addSubview(textField)
-        textField.returnKeyType = UIReturnKeyType.done
-        textField.keyboardAppearance = UIKeyboardAppearance.dark
-        textField.delegate = self
-        textField.tag = 1
-        
-        enterUsernameLabel = UILabel()
-        enterUsernameLabel.text = "Enter a username:"
-        enterUsernameLabel.textColor = UIColor.white
-        enterUsernameLabel.font = UIFont(name: enterUsernameLabel.font.fontName, size: 14)
-        enterUsernameLabel.tag = 1
-        enterUsernameLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font) / 2,
-                                          y : (self.view?.frame.size.height)! / 4,
-                                          width: Math.textWidth(text: enterUsernameLabel.text!, font: enterUsernameLabel.font),
-                                          height: 30.0)
-        
-        usernameLabel = UILabel()
-        usernameLabel.text = ""
-        usernameLabel.textColor = UIColor.white
-        usernameLabel.tag = 1
-        usernameLabel.frame = CGRect(x: 0,
-                                     y : enterUsernameLabel.frame.maxY + 3,
-                                     width: 0,
-                                     height: 30.0)
-        
-        invalidUsernameLabel = UILabel()
-        invalidUsernameLabel.text = ""
-        invalidUsernameLabel.textColor = UIColor.red
-        invalidUsernameLabel.tag = 1
-        
-        self.view?.addSubview(usernameLabel)
-        self.view?.addSubview(enterUsernameLabel)
-        self.view?.addSubview(invalidUsernameLabel)
-        textField.autocorrectionType = UITextAutocorrectionType.no
-        textField.becomeFirstResponder()
-    }
-    
-    func nicknameCleanup()
-    {
-        for view in (self.view?.subviews)!
-        {
-            if (view.tag == 1)
+        let nickname = "\(Words.adjectives[Int.random(in: 0 ..< Words.adjectives.count)])\(Words.nouns[Int.random(in: 0 ..< Words.nouns.count)])\(Int.random(in: 0 ..< 10000))"
+        ref.child("nicknames").child(nickname).observeSingleEvent(of: .value, with: { (snapshot) in
+            
+            if (snapshot.exists() && (snapshot.value as! Bool) == true)  //username already exits
             {
-                view.removeFromSuperview()
+                self.nicknameSetup()
             }
+            else
+            {                   //username doesn't exist
+                self.username = nickname
+                self.ref.child("nicknames/\(nickname)").setValue(true)
+                self.ref.child("users/\(self.email!)/data/nickname").setValue(nickname)
+                
+                self.loadEverything()
+            }
+            
+        }) { (error) in
+            NSLog(error.localizedDescription)
         }
     }
+
     
     func addGameViews()
     {
@@ -1038,8 +980,21 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
     
     func setCurrentAndTravelingPlanets()
     {
-        travelingTo = planetDict[travelingToName]
-        currentPlanet = planetDict[currentPlanetName]
+        if let name = travelingToName
+        {
+            if let travelingToPlanet = planetDict[name]
+            {
+                travelingTo = travelingToPlanet
+            }
+        }
+        
+        if let name = currentPlanetName
+        {
+            if let currentPlanetPlanet = planetDict[name]
+            {
+                currentPlanet = currentPlanetPlanet
+            }
+        }
     }
     
     func moveRocketToCurrentPlanet()
@@ -1276,6 +1231,37 @@ class GameScene: SKScene, UITextFieldDelegate, UITableViewDelegate, UITableViewD
         
     }
     
+}
+
+extension UIView {
+    
+    var safeTopAnchor: NSLayoutYAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return self.safeAreaLayoutGuide.topAnchor
+        }
+        return self.topAnchor
+    }
+    
+    var safeLeftAnchor: NSLayoutXAxisAnchor {
+        if #available(iOS 11.0, *){
+            return self.safeAreaLayoutGuide.leftAnchor
+        }
+        return self.leftAnchor
+    }
+    
+    var safeRightAnchor: NSLayoutXAxisAnchor {
+        if #available(iOS 11.0, *){
+            return self.safeAreaLayoutGuide.rightAnchor
+        }
+        return self.rightAnchor
+    }
+    
+    var safeBottomAnchor: NSLayoutYAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return self.safeAreaLayoutGuide.bottomAnchor
+        }
+        return self.bottomAnchor
+    }
 }
 
 

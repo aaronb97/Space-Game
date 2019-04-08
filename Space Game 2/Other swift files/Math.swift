@@ -116,6 +116,7 @@ class Math {
             alpha: CGFloat(1.0)
         )
     }
+    
 }
 
 
