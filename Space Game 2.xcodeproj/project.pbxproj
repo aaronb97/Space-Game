@@ -11,7 +11,8 @@
 		4E0B8FC322456AF5006402FA /* Planet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E0B8FC222456AF5006402FA /* Planet.swift */; };
 		4E0DC7D42246B9FC00805BF8 /* SignInViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E0DC7D32246B9FC00805BF8 /* SignInViewController.swift */; };
 		4E294704225A893D00CF996B /* Words.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E294703225A893D00CF996B /* Words.swift */; };
-		4E81B4DE224FC7EA0010FA9C /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81B4DD224FC7EA0010FA9C /* Math.swift */; };
+		4E294706225BD45800CF996B /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E294705225BD45800CF996B /* Extensions.swift */; };
+		4E81B4DE224FC7EA0010FA9C /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81B4DD224FC7EA0010FA9C /* Utility.swift */; };
 		4E81B4E0225278AD0010FA9C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4E81B4DF225278AC0010FA9C /* GoogleService-Info.plist */; };
 		4ECFDEE522447B2E002457BC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEE422447B2E002457BC /* AppDelegate.swift */; };
 		4ECFDEEB22447B2E002457BC /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEA22447B2E002457BC /* GameScene.swift */; };
@@ -27,7 +28,8 @@
 		4E0B8FC222456AF5006402FA /* Planet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planet.swift; sourceTree = "<group>"; };
 		4E0DC7D32246B9FC00805BF8 /* SignInViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInViewController.swift; sourceTree = "<group>"; };
 		4E294703225A893D00CF996B /* Words.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Words.swift; sourceTree = "<group>"; };
-		4E81B4DD224FC7EA0010FA9C /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
+		4E294705225BD45800CF996B /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		4E81B4DD224FC7EA0010FA9C /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		4E81B4DF225278AC0010FA9C /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4ECFDEE122447B2E002457BC /* Space Game 2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Space Game 2.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ECFDEE422447B2E002457BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -78,8 +80,9 @@
 				4ECFDEE422447B2E002457BC /* AppDelegate.swift */,
 				4ECFDEEA22447B2E002457BC /* GameScene.swift */,
 				4E0B8FC222456AF5006402FA /* Planet.swift */,
-				4E81B4DD224FC7EA0010FA9C /* Math.swift */,
+				4E81B4DD224FC7EA0010FA9C /* Utility.swift */,
 				4E294703225A893D00CF996B /* Words.swift */,
+				4E294705225BD45800CF996B /* Extensions.swift */,
 			);
 			path = "Other swift files";
 			sourceTree = "<group>";
@@ -290,10 +293,11 @@
 				4E294704225A893D00CF996B /* Words.swift in Sources */,
 				4ECFDEEB22447B2E002457BC /* GameScene.swift in Sources */,
 				4E0B8FC322456AF5006402FA /* Planet.swift in Sources */,
+				4E294706225BD45800CF996B /* Extensions.swift in Sources */,
 				4ECFDEED22447B2E002457BC /* GameViewController.swift in Sources */,
 				4E0DC7D42246B9FC00805BF8 /* SignInViewController.swift in Sources */,
 				4ECFDEE522447B2E002457BC /* AppDelegate.swift in Sources */,
-				4E81B4DE224FC7EA0010FA9C /* Math.swift in Sources */,
+				4E81B4DE224FC7EA0010FA9C /* Utility.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

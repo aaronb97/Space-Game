@@ -51,8 +51,9 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var positionY : Int!
     var velocityX = 0.0
     var velocityY = 0.0
+
     
-    var velocity = 0 {
+    var velocity : Double = 0 {
         didSet {
             setSpeedLabel()
         }
@@ -60,7 +61,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     var baseVelocity = 50000
     
-    var rocket : SKSpriteNode!
+    var rocket = SKSpriteNode()
     var coordinatesSet = false
     var travelingToName: String!
     var currentPlanetName: String!
@@ -90,11 +91,11 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             if (currentPlanet != nil)
             {
                 timeToPlanetLabel.text = ""
+                
             }
         }
     }
     
-    let coordMultiplier = 100.0
     let starFieldWidth : CGFloat = 1000
     let starFieldHeight : CGFloat = 2000
     
@@ -127,76 +128,22 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var timeToPlanetLabel = UILabel()
     var versionLabel = UILabel()
     
-    let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 3000000.0]]
+    let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 200.0]]
     
-    func createStarfield()
-    {
-        for key in starfieldDict.keys
-        {
-            let subDict = starfieldDict[key] as! [String: Double]
-            for i in 0...1 {
-                for j in 0...1 {
-                    let width : CGFloat = starFieldWidth
-                    let height : CGFloat = starFieldHeight
-                    let starfield = SKSpriteNode()
-                    starfield.texture = SKTexture(imageNamed: key)
-                    starfield.name = key
-                    starfield.zPosition = 0
-                    starfield.alpha = CGFloat(subDict["alpha"]!)
-                    starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-                    starfield.size = CGSize(width: width, height: height)
-                    starfield.position = CGPoint(x: width * CGFloat(i) - width / 2,
-                                                 y: height * CGFloat(j) - height / 2)
-                    
-                    self.addChild(starfield)
-                }
-            }
-        }
-    }
     
-    func moveStarField(_ time: TimeInterval)
-    {
-        for key in starfieldDict.keys
-        {
-            let width : CGFloat = starFieldWidth
-            let height : CGFloat = starFieldHeight
-            let subDict = starfieldDict[key] as! [String: Double]
-            self.enumerateChildNodes(withName: key, using: ({
-                (node, error) in
-                node.position = CGPoint(x: node.position.x - CGFloat(self.velocityX / subDict["resistance"]! * time), y: node.position.y - CGFloat(self.velocityY / subDict["resistance"]! * time))
-                if node.position.x > width
-                {
-                    node.position.x = -width
-                }
-                else if node.position.x < -width
-                {
-                    node.position.x = width
-                }
-                
-                if node.position.y > height
-                {
-                    node.position.y = -height
-                }
-                else if node.position.y < -height
-                {
-                    node.position.y = height
-                }
-            }))
-        }
-    }
     
     func setTimeToPlanetLabel()
     {
         if (travelingTo != nil)
         {
             travelingTo.calculateDistance(x: positionX, y: positionY)
-            timeToPlanetLabel.text = "Time to \(travelingTo.name!): \(Math.formatTime(Int(travelingTo!.distance / Double(velocity) * 3600)))"
+            timeToPlanetLabel.text = "Time to \(travelingTo.name!): \(formatTime(Int(travelingTo!.distance / Double(velocity) * 3600)))"
         }
         else
         {
             timeToPlanetLabel.text = ""
         }
-        timeToPlanetLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.timeToPlanetLabel.text!, font: self.timeToPlanetLabel.font) / 2,
+        timeToPlanetLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.timeToPlanetLabel.text!, font: self.timeToPlanetLabel.font) / 2,
                                   y: timeToSpeedBoostLabel.frame.maxY + 5,
                                   width: (self.view?.window!.frame.width)!,
                                   height: 30)
@@ -204,8 +151,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func setSpeedLabel()
     {
-        speedLabel.text = "Speed: \(Math.formatDistance(Double(velocity)))/hour"
-        speedLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.speedLabel.text!, font: self.speedLabel.font) / 2,
+        speedLabel.text = "Speed: \(formatDistance(Double(velocity)))/hour"
+        speedLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.speedLabel.text!, font: self.speedLabel.font) / 2,
             y: 5 * (self.view?.frame.height)! / 8,
             width: 300,
             height: 30)
@@ -316,7 +263,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         menuButton.translatesAutoresizingMaskIntoConstraints = false
         menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
         menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
-        menuButton.widthAnchor.constraint(equalToConstant: Math.textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
+        menuButton.widthAnchor.constraint(equalToConstant: textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
         menuButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
 
         
@@ -327,14 +274,71 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         
         loadingLabel.text = "Loading..."
         loadingLabel.font = UIFont(name: loadingLabel.font.fontName, size: 15)
-        loadingLabel.frame = CGRect(x: (self.view?.center.x)! - Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2,
+        loadingLabel.frame = CGRect(x: (self.view?.center.x)! - textWidth(text: loadingLabel.text!, font: loadingLabel.font) / 2,
                                     y: (self.view?.center.y)!,
-                                    width: Math.textWidth(text: loadingLabel.text!, font: loadingLabel.font),
+                                    width: textWidth(text: loadingLabel.text!, font: loadingLabel.font),
                                     height: 30)
         formatLabel(loadingLabel)
         self.view?.addSubview(loadingLabel)
 
         localTime = Date().timeIntervalSinceReferenceDate
+    }
+    
+    func createStarfield()
+    {
+        for key in starfieldDict.keys
+        {
+            let subDict = starfieldDict[key] as! [String: Double]
+            for i in 0...1 {
+                for j in 0...1 {
+                    let width : CGFloat = starFieldWidth
+                    let height : CGFloat = starFieldHeight
+                    let starfield = SKSpriteNode()
+                    starfield.texture = SKTexture(imageNamed: key)
+                    starfield.name = key
+                    starfield.zPosition = 0
+                    starfield.alpha = CGFloat(subDict["alpha"]!)
+                    starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                    starfield.size = CGSize(width: width, height: height)
+                    starfield.position = CGPoint(x: width * CGFloat(i) - width / 2,
+                                                 y: height * CGFloat(j) - height / 2)
+                    starfield.alpha = 0
+                    self.addChild(starfield)
+                    setView(view: starfield, hide: false)
+                }
+            }
+        }
+    }
+    
+    func moveStarField(_ time: TimeInterval)
+    {
+        for key in starfieldDict.keys
+        {
+            let width : CGFloat = starFieldWidth
+            let height : CGFloat = starFieldHeight
+            let subDict = starfieldDict[key] as! [String: Double]
+            self.enumerateChildNodes(withName: key, using: ({
+                (node, error) in
+                node.position = CGPoint(x: node.position.x - CGFloat(sqrtPreserveSign(self.velocityX) / subDict["resistance"]! * time), y: node.position.y - CGFloat(sqrtPreserveSign(self.velocityY) / subDict["resistance"]! * time))
+                if node.position.x > width
+                {
+                    node.position.x = -width
+                }
+                else if node.position.x < -width
+                {
+                    node.position.x = width
+                }
+                
+                if node.position.y > height
+                {
+                    node.position.y = -height
+                }
+                else if node.position.y < -height
+                {
+                    node.position.y = height
+                }
+            }))
+        }
     }
     
     func formatLabel(_ label: UILabel)
@@ -348,7 +352,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         button.setTitleColor(UIColor.white, for: .normal)
         button.tintColor = UIColor.black
         button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
-        button.backgroundColor = Math.hexStringToUIColor(hex: "000000").withAlphaComponent(0.2)
+        button.backgroundColor = UIColor("000000").withAlphaComponent(0.2)
+        button.setBackgroundColor(color: UIColor("222222").withAlphaComponent(0.2), forState: UIControl.State.highlighted)
         button.layer.cornerRadius = 12
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.white.cgColor
@@ -358,13 +363,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         if sender == setACourseButton
         {
-            setACourseButton.isHidden = true
-            planetListTableView.isHidden = false
-            speedLabel.isHidden = true
-            timeToPlanetLabel.isHidden = true
-            timeToSpeedBoostLabel.isHidden = true
-            menuButton.isHidden = true
-            cancelButton.isHidden = false
             
             for planet in planetDict.values {
                 planet.calculateDistance(x: positionX, y: positionY)
@@ -374,18 +372,26 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             planetArray.sort(by: {$0.distance < $1.distance})
             
             planetListTableView.reloadData()
+            
+            setView(view: setACourseButton, hide: true)
+            setView(view: planetListTableView, hide: false)
+            setView(view: speedLabel, hide: true)
+            setView(view: timeToPlanetLabel, hide: true)
+            setView(view: timeToSpeedBoostLabel, hide: true)
+            setView(view: menuButton, hide: true)
+            setView(view: cancelButton, hide: false)
+            
         }
         else if sender == goButton
         {
-            goButton.isHidden = true
-            planetListTableView.isHidden = true
-            setACourseButton.isHidden = false
-            cancelButton.isHidden = true
-
-            speedLabel.isHidden = false
-            timeToPlanetLabel.isHidden = false
-            timeToSpeedBoostLabel.isHidden = false
-            menuButton.isHidden = false
+            setView(view: goButton, hide: true)
+            setView(view: setACourseButton, hide: false)
+            setView(view: planetListTableView, hide: true)
+            setView(view: speedLabel, hide: false)
+            setView(view: timeToPlanetLabel, hide: false)
+            setView(view: timeToSpeedBoostLabel, hide: false)
+            setView(view: menuButton, hide: false)
+            setView(view: cancelButton, hide: true)
             
             willLandOnPlanetTime = Int.max
             
@@ -402,15 +408,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
         else if sender == cancelButton
         {
-            goButton.isHidden = true
-            planetListTableView.isHidden = true
-            setACourseButton.isHidden = false
-            cancelButton.isHidden = true
-            menuButton.isHidden = false
-            
-            speedLabel.isHidden = false
-            timeToPlanetLabel.isHidden = false
-            timeToSpeedBoostLabel.isHidden = false
+            setView(view: goButton, hide: true)
+            setView(view: setACourseButton, hide: false)
+            setView(view: planetListTableView, hide: true)
+            setView(view: speedLabel, hide: false)
+            setView(view: timeToPlanetLabel, hide: false)
+            setView(view: timeToSpeedBoostLabel, hide: false)
+            setView(view: menuButton, hide: false)
+            setView(view: cancelButton, hide: true)
         }
         else if sender == menuButton
         {
@@ -418,6 +423,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             {
                 planet.fillTexture = nil
             }
+            planetDict = [String: Planet]()
             pushPositionToServer()
             GIDSignIn.sharedInstance()?.signOut()
             UserDefaults.standard.set(false, forKey: "StaySignedIn")
@@ -457,7 +463,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         if let planet = travelingTo
         {
-            let theta = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: planet.position.x, y2: planet.position.y)
+            let theta = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: planet.position.x, y2: planet.position.y)
             rocket.zRotation = theta - .pi / 2
             
             velocityX = Double(cos(theta) * CGFloat(velocity)) * coordMultiplier
@@ -470,12 +476,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         guard let planet = travelingTo else {return}
         guard let radius = planet.radius else {return}
-        if (Math.distance(x1: rocket.position.x, x2: planet.position.x, y1: rocket.position.y, y2: planet.position.y) < radius) //touch down on a planet
+        if (distance(x1: rocket.position.x, x2: planet.position.x, y1: rocket.position.y, y2: planet.position.y) < radius) //touch down on a planet
         {
 
             currentPlanet = planet
             travelingTo = nil
-            rocket.zRotation = Math.angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
+            rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
             
             if (traveledTo[currentPlanet.name!] == nil)
             {
@@ -513,7 +519,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         if (!(planetArray[indexPath.row] == currentPlanet))
         {
             planetSelection = planetArray[indexPath.row]
-            goButton.isHidden = false
+            setView(view: goButton, hide: false)
             goButton.setTitle("Go to \(planetArray[indexPath.row].name!)", for: .normal)
         }
         
@@ -534,10 +540,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 self.camera?.setScale(985295324645636.8)
                 return
             }
-            self.camera!.setScale(newScale)
+            else
+            {
+                self.camera!.setScale(newScale)
+            }
+            
             for planet in planetDict.values
             {
-                if (newScale > 0.1)
+                if (camera!.xScale > CGFloat(0.1))
                 {
                     planet.lineWidth = newScale
                 }
@@ -547,13 +557,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 }
                 planet.glowWidth = newScale
             }
-            if newScale > 1.5
+            print(camera!.xScale)
+            if camera!.xScale > CGFloat(1.4)
             {
                 for key in starfieldDict.keys
                 {
                     self.enumerateChildNodes(withName: key, using: ({
                         (node, error) in
-                        node.isHidden = true
+                        setView(view: node, hide: true, setStartAlpha: false)
                     }))
                 }
             }
@@ -563,7 +574,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 {
                     self.enumerateChildNodes(withName: key, using: ({
                         (node, error) in
-                        node.isHidden = false
+                        setView(view: node, hide: false, setStartAlpha: false)
                     }))
                 }
             }
@@ -619,18 +630,27 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func makeStartElementsVisible()
     {
-        rocket.isHidden = false
+        //rocket.isHidden = false
         for planet in planetDict.values
         {
-            planet.isHidden = false
+            planet.alpha = 0.0
+            setView(view: planet, hide: false)
         }
         
-        speedLabel.isHidden = false
-        timeToPlanetLabel.isHidden = false
-        timeToSpeedBoostLabel.isHidden = false
-        setACourseButton.isHidden = false
-        loadingLabel.isHidden = true
-        menuButton.isHidden = false
+        //speedLabel.isHidden = false
+//        timeToPlanetLabel.isHidden = false
+//        timeToSpeedBoostLabel.isHidden = false
+//        setACourseButton.isHidden = false
+//        loadingLabel.isHidden = true
+//        menuButton.isHidden = false
+        
+        setView(view: rocket, hide: false)
+        setView(view: speedLabel, hide: false)
+        setView(view: timeToSpeedBoostLabel, hide: false)
+        setView(view: timeToPlanetLabel, hide: false)
+        setView(view: setACourseButton, hide: false)
+        setView(view: loadingLabel, hide: true)
+        setView(view: menuButton, hide: false)
         
         
         self.addChild(camera!)
@@ -638,16 +658,31 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func makeStartElementsInvisible()
     {
-        self.removeAllChildren()
-        planetDict = [String: Planet]()
+        setView(view: rocket, hide: true)
+        setView(view: speedLabel, hide: true)
+        setView(view: timeToSpeedBoostLabel, hide: true)
+        setView(view: timeToPlanetLabel, hide: true)
+        setView(view: setACourseButton, hide: true)
+        setView(view: loadingLabel, hide: false)
+        setView(view: menuButton, hide: true)
         
-        speedLabel.isHidden = true
-        timeToPlanetLabel.isHidden = true
-        timeToSpeedBoostLabel.isHidden = true
-        setACourseButton.isHidden = true
-        loadingLabel.isHidden = false
-        planetListTableView.isHidden = true
-        menuButton.isHidden = true
+        self.removeAllChildren()
+        
+        for planet in planetDict.values
+        {
+            planet.fillTexture = nil
+        }
+        //planetDict = [String: Planet]()
+        
+//        speedLabel.isHidden = true
+//        timeToPlanetLabel.isHidden = true
+//        timeToSpeedBoostLabel.isHidden = true
+//        setACourseButton.isHidden = true
+//        loadingLabel.isHidden = false
+//        planetListTableView.isHidden = true
+//        menuButton.isHidden = true
+        
+        
     }
     
     func getUserData(_ group: DispatchGroup)
@@ -665,7 +700,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             NSLog("got user data for \(self.email ?? "nil")")
         }) { (error) in
             NSLog(error.localizedDescription)
-            self.showAlertMessage(messageHeader: "Error", messageBody: error.localizedDescription)
+            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
         }
     }
     
@@ -684,7 +719,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 self.username = nickname
                 self.ref.child("nicknames/\(nickname)").setValue(true)
                 self.ref.child("users/\(self.email!)/data/nickname").setValue(nickname)
-                
                 self.loadEverything()
             }
             
@@ -693,7 +727,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
 
-    
     func addGameViews()
     {
         self.view?.addSubview(setACourseButton)
@@ -751,7 +784,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 NSLog("date loaded")
             }) { (error) in
                 NSLog(error.localizedDescription)
-                self.showAlertMessage(messageHeader: "Error loading date", messageBody: error.localizedDescription)
+                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
             }
         })
     }
@@ -765,7 +798,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             NSLog("planet list loaded")
         }) { (error) in
             NSLog(error.localizedDescription)
-            self.showAlertMessage(messageHeader: "Error loading planet list", messageBody: error.localizedDescription)
+            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
         }
     }
     
@@ -787,25 +820,24 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
-                                            x: Int(Double(coordDict["x"]!)! * self.coordMultiplier * Math.AU),
-                                            y: Int(Double(coordDict["y"]!)! * self.coordMultiplier * Math.AU),
-                                            color: valueDict["color"] != nil ? Math.hexStringToUIColor(hex: valueDict["color"] as! String) : nil,
+                                            x: Int(Double(coordDict["x"]!)! * coordMultiplier * AU),
+                                            y: Int(Double(coordDict["y"]!)! * coordMultiplier * AU),
+                                            color: valueDict["color"] != nil ? UIColor( valueDict["color"] as! String) : nil,
                                             type: valueDict["type"] as? String)
                     
                     self.planetDict[planet.name!] = planet
-                    
                     planet.visitorDict = visitorDict
                     group.leave()
                     
                 }) { (error) in
                     NSLog(error.localizedDescription)
-                    self.showAlertMessage(messageHeader: "Error loading planet values", messageBody: error.localizedDescription)
+                    showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
                 }
                 
                 
             }) { (error) in
                 NSLog(error.localizedDescription)
-                self.showAlertMessage(messageHeader: "Error loading planet positions", messageBody: error.localizedDescription)
+                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
             }
         }
         
@@ -818,16 +850,15 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         for planet in planetDict.values
         {
-            planet.isHidden = true
+            //planet.isHidden = true
             planet.zPosition = 1
             if (planet.startingPlanet == true) //process the starting planet first
             {
-                if (rocket == nil)
-                {
+                
                     rocket = SKSpriteNode(imageNamed: "rocket.png")
                     rocket.size = CGSize(width: 20, height: 40)
                     rocket.zPosition = 2
-                }
+                
 
                 self.addChild(rocket)
                 camera!.position = CGPoint(x: 0, y: 0)
@@ -886,7 +917,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
              "velocity" : velocity,
              "nextSpeedBoostTime": nextSpeedBoostTime,
              "willLandOnPlanetTime" : willLandOnPlanetTime])
-        
     }
     
     func getPositionFromServer(_ group: DispatchGroup!)
@@ -899,7 +929,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             {
                 let coordDict = snap.value as! [String: Any]
                 
-                self.velocity = coordDict["velocity"] as? Int ?? 0
+                self.velocity = coordDict["velocity"] as? Double ?? 0
                 self.positionX = coordDict["positionX"] as? Int
                 self.positionY = coordDict["positionY"] as? Int
                 self.velocityX = coordDict["velocityX"] as? Double ?? 0
@@ -913,13 +943,11 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 NSLog("\(millisecondsElapsed) milliseconds since last load")
 
-                NSLog("x change: \(Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
-                NSLog("y change: \(Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed)))")
+                NSLog("x change: \(Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed)))")
+                NSLog("y change: \(Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed)))")
                 
-                self.positionX += Int(self.velocityX / Math.millisecondsPerHour * Double(millisecondsElapsed))
-                self.positionY += Int(self.velocityY / Math.millisecondsPerHour * Double(millisecondsElapsed))
-
-
+                self.positionX += Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed))
+                self.positionY += Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed))
             }
             
             if (group != nil)
@@ -929,10 +957,9 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
 
         }) { (error) in
             NSLog(error.localizedDescription)
-            self.showAlertMessage(messageHeader: "Error", messageBody: error.localizedDescription)
+            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
         }
     }
-    
     
     func calculateIfBoostedOrLanded()
     {
@@ -968,11 +995,11 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
         else
         {
-            self.timeToSpeedBoostLabel.text = "Speed boost available in \(Math.formatTime(Int(Double(self.nextSpeedBoostTime - self.timestamp) / 1000)))"
+            self.timeToSpeedBoostLabel.text = "Speed boost available in \(formatTime(Int(Double(self.nextSpeedBoostTime - self.timestamp) / 1000)))"
             
         }
         
-        timeToSpeedBoostLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - Math.textWidth(text: self.timeToSpeedBoostLabel.text!, font: self.timeToSpeedBoostLabel.font) / 2,
+        timeToSpeedBoostLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.timeToSpeedBoostLabel.text!, font: self.timeToSpeedBoostLabel.font) / 2,
                                              y: speedLabel.frame.maxY + 10,
                                              width: 300,
                                              height: 30)
@@ -1013,15 +1040,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             rocket.zRotation = .pi
         }
 
-        print("velocities: \(velocityX) \(velocityY)")
-        print("zRotation: \(rocket.zRotation)")
         let zRot = rocket.zRotation
         let adjustedX = Int(currentPlanet.radius * coordMultiplier * Double(cos(zRot + .pi / 2)))
         let adjustedY = Int(currentPlanet.radius * coordMultiplier * Double(sin(zRot + .pi / 2)))
 
         positionX = currentPlanet.x - adjustedX
         positionY = currentPlanet.y - adjustedY
-        
         rocket.zRotation -= .pi
         
         for planet in planetDict.values
@@ -1033,8 +1057,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setSpeedBoostTimeLabel()
     }
     
-    
-    func calcSpeed() -> Int
+    func calcSpeed() -> Double
     {
         var speedSum = 40000
         for key in traveledTo.keys
@@ -1047,6 +1070,10 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 else if planet.type == "Moon" {
                     
                     speedSum += 5000
+                }
+                else if planet.type == "Irregular Moon" {
+                    
+                    speedSum += 2500
                 }
                 else if planet.type == "Star" {
                     
@@ -1061,20 +1088,18 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 }
             }
         }
-        return speedSum
+        return Double(speedSum)
     }
 
     @objc func loadPlanetImages()
     {
         loadPlanetImagesTimer.invalidate()
         DispatchQueue.global(qos: .userInitiated).async {
-            //print(self.camera?.xScale)
             for key in self.planetTexturesDict.keys
             {
                 let planet = self.planetDict[key]
                 if planet != nil
                 {
-                    //print("camera contains \(planet!.name!): \(self.camera?.contains(planet!))")
                     if self.camera!.xScale < CGFloat(planet!.radius * 2) && (self.camera?.contains(planet!))!
                     {
                         if planet?.fillTexture == nil
@@ -1112,26 +1137,18 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         
         if (travelingTo != nil)
         {
-            
-            positionX += Int(velocityX / Math.secondsPerHour * timeDiff)
-            positionY += Int(velocityY / Math.secondsPerHour * timeDiff)
+            positionX += Int(velocityX / secondsPerHour * timeDiff)
+            positionY += Int(velocityY / secondsPerHour * timeDiff)
             
             for planet in planetDict.values
             {
-                planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
+                planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier,
+                                          y: Double(planet.y - positionY!) / coordMultiplier)
             }
             
             moveStarField(timeDiff)
             checkTouchDown()
-            
-//            xPositionLabel.text = "x position: \(positionX!)"
-//            yPositionLabel.text = "y position: \(positionY!)"
-//            zPositionLabel.text = "z position: \(positionZ!)"
-//            xVelocityLabel.text = "x velocity: \(velocityX!)"
-//            yVelocityLabel.text = "y velocity: \(velocityY!)"
-//            zVelocityLabel.text = "z velocity: \(velocityZ!)"
 
-            
         }
     }
     
@@ -1148,8 +1165,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
         
         cell?.detailTextLabel?.numberOfLines = 5
-        
         cell!.textLabel?.text = planet.name
+        
         if self.planetArray[indexPath.row] == currentPlanet
         {
             cell!.textLabel?.textColor = UIColor.gray
@@ -1163,25 +1180,28 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             cell!.detailTextLabel?.text = "You are already traveling here"
             cell!.detailTextLabel?.textColor = UIColor.gray
             cell!.selectionStyle = UITableViewCell.SelectionStyle.none
-            cell!.detailTextLabel?.text?.append("\nDistance: \(String(describing: Math.formatDistance(self.planetArray[indexPath.row].distance!)))")
+            cell!.detailTextLabel?.text?.append("\nDistance: \(String(describing: formatDistance(self.planetArray[indexPath.row].distance!)))")
         }
         else
         {
             cell!.textLabel?.textColor = UIColor.black
             cell!.detailTextLabel?.textColor = UIColor.black
             cell!.selectionStyle = UITableViewCell.SelectionStyle.default
-            cell!.detailTextLabel?.text = "Distance: \(String(describing: Math.formatDistance(self.planetArray[indexPath.row].distance!)))"
+            cell!.detailTextLabel?.text = "Distance: \(String(describing: formatDistance(self.planetArray[indexPath.row].distance!)))"
         }
+        
         if (planet.type != nil)
         {
             cell?.detailTextLabel?.text?.append("\nType: \(planet.type!)")
         }
         let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
         cell?.detailTextLabel?.text?.append("\nVisited by: \(visitorCount)")
+        
         if (traveledTo[planet.name!] == true && planet != currentPlanet)
         {
             cell?.detailTextLabel?.text?.append("\nYou have been here")
         }
+        
         cell?.backgroundColor = planet.color != nil ? planet.color!.lighter() : planet.fillColor.lighter()
         return cell!
     }
@@ -1194,74 +1214,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         return UITableView.automaticDimension
     }
     
-    func addDebugLabels()
-    {
-        xPositionLabel = UILabel()
-        yPositionLabel = UILabel()
-        zPositionLabel = UILabel()
-        xVelocityLabel = UILabel()
-        yVelocityLabel = UILabel()
-        
-        let labelHeight = 15.0
-        xPositionLabel.frame = CGRect(x: 0, y: (self.view?.center.y)! + 30, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        yPositionLabel.frame = CGRect(x: 0, y: xPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        zPositionLabel.frame = CGRect(x: 0, y: yPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        xVelocityLabel.frame = CGRect(x: 0, y: zPositionLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-        yVelocityLabel.frame = CGRect(x: 0, y: xVelocityLabel.frame.maxY + 2, width: (self.view?.frame.width)!, height: CGFloat(labelHeight))
-
-        
-        formatLabel(xPositionLabel)
-        formatLabel(yPositionLabel)
-        formatLabel(zPositionLabel)
-        formatLabel(xVelocityLabel)
-        formatLabel(yVelocityLabel)
-        
-        self.view?.addSubview(xPositionLabel)
-        self.view?.addSubview(yPositionLabel)
-        self.view?.addSubview(zPositionLabel)
-        self.view?.addSubview(xVelocityLabel)
-        self.view?.addSubview(yVelocityLabel)
-    }
-    
-    func showAlertMessage(messageHeader header: String, messageBody body: String) {
-        
-        let alertController = UIAlertController(title: header, message: body, preferredStyle: UIAlertController.Style.alert)
-        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        self.view?.window!.rootViewController!.present(alertController, animated: true, completion: nil)
-        
-    }
-    
 }
 
-extension UIView {
-    
-    var safeTopAnchor: NSLayoutYAxisAnchor {
-        if #available(iOS 11.0, *) {
-            return self.safeAreaLayoutGuide.topAnchor
-        }
-        return self.topAnchor
-    }
-    
-    var safeLeftAnchor: NSLayoutXAxisAnchor {
-        if #available(iOS 11.0, *){
-            return self.safeAreaLayoutGuide.leftAnchor
-        }
-        return self.leftAnchor
-    }
-    
-    var safeRightAnchor: NSLayoutXAxisAnchor {
-        if #available(iOS 11.0, *){
-            return self.safeAreaLayoutGuide.rightAnchor
-        }
-        return self.rightAnchor
-    }
-    
-    var safeBottomAnchor: NSLayoutYAxisAnchor {
-        if #available(iOS 11.0, *) {
-            return self.safeAreaLayoutGuide.bottomAnchor
-        }
-        return self.bottomAnchor
-    }
-}
+
 
 

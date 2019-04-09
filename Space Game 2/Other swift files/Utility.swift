@@ -9,34 +9,66 @@
 import Foundation
 import GameplayKit
 
-class Math {
+
+     let AU = 149597871.0
+     let framesPerHour : Double = 216000
+     let millisecondsPerHour : Double = 3600000
+     let secondsPerHour : Double = 3600
+     let coordMultiplier = 100.0
     
-    static let AU = 149597871.0
-    static let framesPerHour : Double = 216000
-    static let millisecondsPerHour : Double = 3600000
-    static let secondsPerHour : Double = 3600
+     func setView(view: UIView, hide: Bool) {
+        
+        UIView.transition(with: view, duration: 0.5, options: .transitionCrossDissolve, animations: {
+            view.isHidden = hide
+        })
+
+    }
+
+    func setView(view: SKNode!, hide: Bool, setStartAlpha: Bool = true)
+    {
+        if let node = view
+        {
+            print(node)
+            if hide
+            {
+                if setStartAlpha
+                {
+                    node.alpha = 1.0
+                }
+                node.run(SKAction.fadeOut(withDuration: 0.5))
+            }
+            else
+            {
+                if setStartAlpha
+                {
+                    node.alpha = 0.0
+                }
+                node.run(SKAction.fadeIn(withDuration: 0.5))
+            }
+        }
+    }
     
-    static func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
+     func angleBetween(x1: CGFloat, y1: CGFloat, x2: CGFloat, y2: CGFloat) -> CGFloat
     {
         return atan2(y2 - y1, x2 - x1)
     }
     
-    static func textWidth(text: String, font: UIFont?) -> CGFloat {
+     func textWidth(text: String, font: UIFont?) -> CGFloat {
         let attributes = font != nil ? [NSAttributedString.Key.font: font] : [:]
         return text.size(withAttributes: attributes as [NSAttributedString.Key : Any]).width
     }
     
-    static func distance(x1: Double, x2: Double, y1: Double, y2: Double) -> Double
+     func distance(x1: Double, x2: Double, y1: Double, y2: Double) -> Double
     {
         return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
     }
     
-    static func distance(x1: CGFloat, x2: CGFloat, y1: CGFloat, y2: CGFloat) -> Double
+     func distance(x1: CGFloat, x2: CGFloat, y1: CGFloat, y2: CGFloat) -> Double
     {
         return Double(sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)))
     }
     
-    static func formatDistance(_ number: Double) -> String
+     func formatDistance(_ number: Double) -> String
     {
         if number >= 1000000000000
         {
@@ -59,7 +91,7 @@ class Math {
     }
     
     
-    static func formatTime(_ seconds: Int) -> String
+     func formatTime(_ seconds: Int) -> String
     {
         var returnText = ""
         
@@ -67,7 +99,6 @@ class Math {
         var hours = Double(minutes) / 60.0
         var days = Double(hours) / 24
         let years = Double(days) / 365
-        //let reducedSeconds = Double(seconds).truncatingRemainder(dividingBy: 60.0)
         days = days.truncatingRemainder(dividingBy: 365.0)
         minutes = minutes.truncatingRemainder(dividingBy: 60.0)
         hours = hours.truncatingRemainder(dividingBy: 24.0)
@@ -90,33 +121,23 @@ class Math {
         }
         else
         {
-            return "less than a minute"
+            return "< 1 minute"
         }
         return returnText
     }
     
-    static func hexStringToUIColor (hex:String) -> UIColor {
-        var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+     func showAlertMessage(_ vc: UIViewController, header: String, body: String) {
         
-        if (cString.hasPrefix("#")) {
-            cString.remove(at: cString.startIndex)
-        }
+        let alertController = UIAlertController(title: header, message: body, preferredStyle: UIAlertController.Style.alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        vc.present(alertController, animated: true, completion: nil)
         
-        if ((cString.count) != 6) {
-            return UIColor.gray
-        }
-        
-        var rgbValue:UInt32 = 0
-        Scanner(string: cString).scanHexInt32(&rgbValue)
-        
-        return UIColor(
-            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
-            alpha: CGFloat(1.0)
-        )
     }
-    
-}
+
+    func sqrtPreserveSign(_ x: Double) -> Double
+    {
+        let posX = abs(x)
+        return x > 0 ? sqrt(posX) : sqrt(posX) * -1
+    }
 
 

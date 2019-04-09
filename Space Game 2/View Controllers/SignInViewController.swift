@@ -32,8 +32,8 @@ class SignInViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDele
         signInButton.frame = CGRect(x: (self.view.frame.size.width - SIGNIN_WIDTH) / 2, y: self.view.frame.size.height - 200, width: SIGNIN_WIDTH, height: SIGNIN_HEIGHT)
         stayLoggedInSwitch.frame = CGRect(x: CGFloat(self.view.frame.size.width / 2) - switchWidth / 2, y: signInButton.frame.maxY + 30, width: switchWidth, height: switchHeight)
         switchLabel.text = "Keep me signed in"
-        switchLabel.frame = CGRect(x: CGFloat(self.view.frame.size.width / 2)  - CGFloat(Math.textWidth(text: switchLabel.text!, font: switchLabel.font) / 2),
-                                   y: CGFloat(stayLoggedInSwitch.frame.maxY + 5), width: CGFloat(Math.textWidth(text: switchLabel.text!, font: switchLabel.font)), height: 20)
+        switchLabel.frame = CGRect(x: CGFloat(self.view.frame.size.width / 2)  - CGFloat(textWidth(text: switchLabel.text!, font: switchLabel.font) / 2),
+                                   y: CGFloat(stayLoggedInSwitch.frame.maxY + 5), width: CGFloat(textWidth(text: switchLabel.text!, font: switchLabel.font)), height: 20)
         switchLabel.textColor = .white
         stayLoggedInSwitch.isHidden = true
         
