@@ -77,7 +77,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var setACourseButton = UIButton()
     var goButton = UIButton()
     var cancelButton = UIButton()
-    let menuButton = UIButton()
+    let signOutButton = UIButton()
     
     var planetSelection: Planet!
     var travelingTo: Planet! {
@@ -129,8 +129,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var versionLabel = UILabel()
     
     let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 200.0]]
-    
-    
     
     func setTimeToPlanetLabel()
     {
@@ -245,13 +243,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         formatLabel(versionLabel)
         formatLabel(usernameLabel)
         
-        formatButton(menuButton)
+        formatButton(signOutButton)
+        signOutButton.isHidden = true
         
         self.view?.addSubview(speedLabel)
         self.view?.addSubview(timeToSpeedBoostLabel)
         self.view?.addSubview(timeToPlanetLabel)
         self.view?.addSubview(versionLabel)
-        self.view?.addSubview(menuButton)
+        self.view?.addSubview(signOutButton)
         self.view?.addSubview(usernameLabel)
         self.view?.addSubview(setACourseButton)
         
@@ -259,12 +258,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         usernameLabel.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
         usernameLabel.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
         
-        menuButton.setTitle("Sign Out", for: .normal)
-        menuButton.translatesAutoresizingMaskIntoConstraints = false
-        menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
-        menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
-        menuButton.widthAnchor.constraint(equalToConstant: textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
-        menuButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        signOutButton.setTitle("Sign Out", for: .normal)
+        signOutButton.translatesAutoresizingMaskIntoConstraints = false
+        signOutButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
+        signOutButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
+        signOutButton.widthAnchor.constraint(equalToConstant: textWidth(text: signOutButton.titleLabel!.text!, font: signOutButton.titleLabel!.font!) + 15).isActive = true
+        signOutButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
 
         
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -378,7 +377,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: speedLabel, hide: true)
             setView(view: timeToPlanetLabel, hide: true)
             setView(view: timeToSpeedBoostLabel, hide: true)
-            setView(view: menuButton, hide: true)
+            setView(view: signOutButton, hide: true)
             setView(view: cancelButton, hide: false)
             
         }
@@ -390,7 +389,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: speedLabel, hide: false)
             setView(view: timeToPlanetLabel, hide: false)
             setView(view: timeToSpeedBoostLabel, hide: false)
-            setView(view: menuButton, hide: false)
+            setView(view: signOutButton, hide: false)
             setView(view: cancelButton, hide: true)
             
             willLandOnPlanetTime = Int.max
@@ -414,10 +413,10 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: speedLabel, hide: false)
             setView(view: timeToPlanetLabel, hide: false)
             setView(view: timeToSpeedBoostLabel, hide: false)
-            setView(view: menuButton, hide: false)
+            setView(view: signOutButton, hide: false)
             setView(view: cancelButton, hide: true)
         }
-        else if sender == menuButton
+        else if sender == signOutButton
         {
             for planet in planetDict.values
             {
@@ -557,7 +556,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 }
                 planet.glowWidth = newScale
             }
-            print(camera!.xScale)
             if camera!.xScale > CGFloat(1.4)
             {
                 for key in starfieldDict.keys
@@ -650,7 +648,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setView(view: timeToPlanetLabel, hide: false)
         setView(view: setACourseButton, hide: false)
         setView(view: loadingLabel, hide: true)
-        setView(view: menuButton, hide: false)
+        setView(view: signOutButton, hide: false)
         
         
         self.addChild(camera!)
@@ -664,7 +662,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setView(view: timeToPlanetLabel, hide: true)
         setView(view: setACourseButton, hide: true)
         setView(view: loadingLabel, hide: false)
-        setView(view: menuButton, hide: true)
+        setView(view: signOutButton, hide: true)
         
         self.removeAllChildren()
         
