@@ -11,6 +11,7 @@ import GameplayKit
 
 
      let AU = 149597871.0
+     let parsec = 3.086e+13
      let framesPerHour : Double = 216000
      let millisecondsPerHour : Double = 3600000
      let secondsPerHour : Double = 3600
@@ -28,7 +29,6 @@ import GameplayKit
     {
         if let node = view
         {
-            print(node)
             if hide
             {
                 if setStartAlpha
@@ -98,24 +98,31 @@ import GameplayKit
         var minutes = Double(seconds) / 60.0
         var hours = Double(minutes) / 60.0
         var days = Double(hours) / 24
-        let years = Double(days) / 365
+        var years = Double(days) / 365
+        let centuries = Double(years) / 100
+        
+        years = years.truncatingRemainder(dividingBy: 100.0)
         days = days.truncatingRemainder(dividingBy: 365.0)
         minutes = minutes.truncatingRemainder(dividingBy: 60.0)
         hours = hours.truncatingRemainder(dividingBy: 24.0)
         
-        if years >= 1
+        if centuries >= 1
+        {
+            returnText.append("\(Int(centuries))c ")
+        }
+        if centuries >= 1 || years >= 1
         {
             returnText.append("\(Int(years))y ")
         }
-        if years >= 1 || days >= 1
+        if centuries >= 1 || years >= 1 || days >= 1
         {
             returnText.append("\(Int(days))d ")
         }
-        if years >= 1 || hours >= 1 || days >= 1
+        if centuries >= 1 || years >= 1 || hours >= 1 || days >= 1
         {
             returnText.append("\(Int(hours))h ")
         }
-        if  years >= 1 || minutes >= 1 || hours >= 1 || days >= 1
+        if centuries >= 1 || years >= 1 || minutes >= 1 || hours >= 1 || days >= 1
         {
             returnText.append("\(Int(minutes))m ")
         }

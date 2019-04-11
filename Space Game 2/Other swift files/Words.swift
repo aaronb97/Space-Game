@@ -11,7 +11,7 @@ import Foundation
 class Words {
 
 static let nouns = ["Asteroid","Comet","Galaxy","Meteor","Nebula","Nova","Supernova","Pulsar","Satellite","Quasar",
-    "Eclipse", "UFO", "Universe", "Rocket", "Star", "Planet", "Moon"]
+    "Eclipse", "UFO", "Universe", "Rocket", "Star", "Planet", "Moon", "Blackhole", "Astronaut", "Alien"]
     
     static let adjectives = ["Bitter",
     "Spicy",
@@ -191,8 +191,6 @@ static let nouns = ["Asteroid","Comet","Galaxy","Meteor","Nebula","Nova","Supern
     "First",
     "Old",
     "Swift",
-    "Waiting",
-    "Future",
     "Quick",
     "Young",
     "Heavy",
@@ -200,8 +198,6 @@ static let nouns = ["Asteroid","Comet","Galaxy","Meteor","Nebula","Nova","Supern
     "Paltry",
     "Astronomical",
     "Large",
-    "Plentiful",
-    "Bountiful",
     "Light",
     "Profuse",
     "Considerable",
@@ -210,11 +206,7 @@ static let nouns = ["Asteroid","Comet","Galaxy","Meteor","Nebula","Nova","Supern
     "Copious",
     "Little",
     "Sizable",
-    "Countless",
     "Measly",
-    "Sparse",
-    "Substantial",
-    "Numerous",
     "Abrasive",
     "Embarrassed",
     "Grumpy",
@@ -560,6 +552,7 @@ static let nouns = ["Asteroid","Comet","Galaxy","Meteor","Nebula","Nova","Supern
     "Legal",
     "Wry",
     "Dismissive",
-    "Logical"]
+    "Logical",
+    "Supermassive"]
 
 }

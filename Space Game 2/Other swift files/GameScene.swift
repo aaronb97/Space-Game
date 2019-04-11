@@ -69,6 +69,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var planetDict = [String: Planet]()
     var planetArray = [Planet]()
     var planetList : [String]!
+    var starList : [String]!
     
     let sceneCam = SKCameraNode()
     
@@ -86,12 +87,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    let consoleView = ConsoleView()
+
+    
     var currentPlanet : Planet! {
         didSet {
             if (currentPlanet != nil)
             {
-                timeToPlanetLabel.text = ""
-                
+                consoleView.timeToDestLabel.text = ""
             }
         }
     }
@@ -111,6 +114,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    
     var nextSpeedBoostTime = Int.max
     var willLandOnPlanetTime = Int.max
     
@@ -121,39 +125,29 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     var localTime: TimeInterval!
     
-    var traveledTo = [String: Bool]()
+    var traveledToDict = [String: Bool]()
+    var flagsDict = [String: Bool]()
     
-    var speedLabel = UILabel()
-    var timeToSpeedBoostLabel = UILabel()
-    var timeToPlanetLabel = UILabel()
     var versionLabel = UILabel()
     
-    let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 200.0]]
+    let starfieldDict : [String: Any] = ["starfield": ["alpha" : 1.0, "resistance": 600.0]]
     
     func setTimeToPlanetLabel()
     {
         if (travelingTo != nil)
         {
             travelingTo.calculateDistance(x: positionX, y: positionY)
-            timeToPlanetLabel.text = "Time to \(travelingTo.name!): \(formatTime(Int(travelingTo!.distance / Double(velocity) * 3600)))"
+            consoleView.timeToDestLabel.text = "Time to \(travelingTo.name!): \(formatTime(Int(travelingTo!.distance / Double(velocity) * 3600)))"
         }
         else
         {
-            timeToPlanetLabel.text = ""
+            consoleView.timeToDestLabel.text = ""
         }
-        timeToPlanetLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.timeToPlanetLabel.text!, font: self.timeToPlanetLabel.font) / 2,
-                                  y: timeToSpeedBoostLabel.frame.maxY + 5,
-                                  width: (self.view?.window!.frame.width)!,
-                                  height: 30)
     }
     
     func setSpeedLabel()
     {
-        speedLabel.text = "Speed: \(formatDistance(Double(velocity)))/hour"
-        speedLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.speedLabel.text!, font: self.speedLabel.font) / 2,
-            y: 5 * (self.view?.frame.height)! / 8,
-            width: 300,
-            height: 30)
+        consoleView.speedLabel.text = "Speed: \(formatDistance(Double(velocity)))/hour"
     }
     
     override func didMove(to view: SKView) {
@@ -165,6 +159,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         camera = sceneCam
         camera?.name = "camera"
         
+        self.view?.window?.addSubview(consoleView)
+        consoleView.translatesAutoresizingMaskIntoConstraints = false
+        consoleView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
+        consoleView.bottomAnchor.constraint(equalTo: view.centerYAnchor, constant: 250).isActive = true
+        consoleView.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        consoleView.heightAnchor.constraint(equalToConstant: 200).isActive = true
         
         
         let pinch = UIPinchGestureRecognizer(target: self, action:#selector(self.pinchRecognized(sender:)))
@@ -184,9 +184,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                     self.loadEverything()
                 }
         })
-        
-        
-        
 
         planetListTableView.rowHeight = CGFloat(100)
         self.scene?.view?.addSubview(planetListTableView)
@@ -200,7 +197,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         planetListTableView.topAnchor.constraint(equalTo: view.safeTopAnchor, constant: 15).isActive = true
         planetListTableView.bottomAnchor.constraint(equalTo: view.safeBottomAnchor, constant: -160).isActive = true
         
-        
         setACourseButton.setTitle("Set a Course", for: .normal)
         let setACourseButtonWidth = 130.0
         setACourseButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(setACourseButtonWidth / 2), y: self.view!.frame.height / 4, width: CGFloat(setACourseButtonWidth), height: CGFloat(30.0))
@@ -213,7 +209,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         goButton.translatesAutoresizingMaskIntoConstraints = false
         goButton.topAnchor.constraint(equalTo: planetListTableView.bottomAnchor, constant: 20).isActive = true
         goButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        goButton.widthAnchor.constraint(equalToConstant: 150).isActive = true
+        goButton.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        
         goButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         self.view?.addSubview(cancelButton)
@@ -233,22 +230,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         
         usernameLabel.font = UIFont(name: versionLabel.font.fontName, size: 12)
         
-        speedLabel.isHidden = true
-        timeToSpeedBoostLabel.isHidden = true
-        timeToPlanetLabel.isHidden = true
+        consoleView.isHidden = true
         
-        formatLabel(speedLabel)
-        formatLabel(timeToSpeedBoostLabel)
-        formatLabel(timeToPlanetLabel)
         formatLabel(versionLabel)
         formatLabel(usernameLabel)
         
         formatButton(signOutButton)
         signOutButton.isHidden = true
         
-        self.view?.addSubview(speedLabel)
-        self.view?.addSubview(timeToSpeedBoostLabel)
-        self.view?.addSubview(timeToPlanetLabel)
         self.view?.addSubview(versionLabel)
         self.view?.addSubview(signOutButton)
         self.view?.addSubview(usernameLabel)
@@ -351,8 +340,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         button.setTitleColor(UIColor.white, for: .normal)
         button.tintColor = UIColor.black
         button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
-        button.backgroundColor = UIColor("000000").withAlphaComponent(0.2)
-        button.setBackgroundColor(color: UIColor("222222").withAlphaComponent(0.2), forState: UIControl.State.highlighted)
+        button.backgroundColor = UIColor("000000").withAlphaComponent(0.8)
+        button.setBackgroundColor(color: UIColor("111111").withAlphaComponent(1.0), forState: UIControl.State.highlighted)
         button.layer.cornerRadius = 12
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.white.cgColor
@@ -374,9 +363,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             
             setView(view: setACourseButton, hide: true)
             setView(view: planetListTableView, hide: false)
-            setView(view: speedLabel, hide: true)
-            setView(view: timeToPlanetLabel, hide: true)
-            setView(view: timeToSpeedBoostLabel, hide: true)
+            setView(view: consoleView, hide: true)
             setView(view: signOutButton, hide: true)
             setView(view: cancelButton, hide: false)
             
@@ -386,9 +373,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: goButton, hide: true)
             setView(view: setACourseButton, hide: false)
             setView(view: planetListTableView, hide: true)
-            setView(view: speedLabel, hide: false)
-            setView(view: timeToPlanetLabel, hide: false)
-            setView(view: timeToSpeedBoostLabel, hide: false)
+            setView(view: consoleView, hide: false)
             setView(view: signOutButton, hide: false)
             setView(view: cancelButton, hide: true)
             
@@ -410,9 +395,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: goButton, hide: true)
             setView(view: setACourseButton, hide: false)
             setView(view: planetListTableView, hide: true)
-            setView(view: speedLabel, hide: false)
-            setView(view: timeToPlanetLabel, hide: false)
-            setView(view: timeToSpeedBoostLabel, hide: false)
+            setView(view: consoleView, hide: false)
             setView(view: signOutButton, hide: false)
             setView(view: cancelButton, hide: true)
         }
@@ -482,46 +465,47 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             travelingTo = nil
             rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
             
-            if (traveledTo[currentPlanet.name!] == nil)
+            if (traveledToDict[currentPlanet.name!] == nil)
             {
                 addVisitorToPlanet(currentPlanet.name!)
             }
             
-            traveledTo[currentPlanet.name!] = true
-            pushTraveledToDict()
+            traveledToDict[currentPlanet.name!] = true
             velocity = 0
             pushPositionToServer()
             setSpeedBoostTimeLabel()
         }
     }
     
-    func pushTraveledToDict()
-    {
-        ref.child("users/\(email!)/data/traveledTo").setValue(traveledTo)
-    }
-    
     func addVisitorToPlanet(_ name: String)
     {
-        let planet = planetDict[name]
-        if (planet?.visitorDict[self.username] != true)
+        //guard let planet = planetDict[name] else { NSLog("planet to add visitor to not found"); return}
+        
+        if traveledToDict[name] != true
         {
-            planet?.visitorDict[self.username] = true
-            traveledTo[name] = true
+            //planet.visitorDict[self.username] = true
+            traveledToDict[name] = true
             self.ref.child("planets/\(name)/values/visitors/\(self.username!)").setValue(true)
             NSLog("added visitor \(username!) to \(name)")
-            pushTraveledToDict()
+            self.ref.child("users/\(email!)/data/traveledTo/\(name)").setValue(true)
         }
     }
     
     func tableView(_ tableView: UITableView,
                    didSelectRowAt indexPath: IndexPath) {
-        if (!(planetArray[indexPath.row] == currentPlanet))
+        let planet = planetArray[indexPath.row]
+        if planet != currentPlanet && planet != travelingTo
         {
             planetSelection = planetArray[indexPath.row]
-            setView(view: goButton, hide: false)
+            setView(view: goButton, hide: true)
             goButton.setTitle("Go to \(planetArray[indexPath.row].name!)", for: .normal)
+            
+            
+            //self.goButton.frame.size.width = textWidth(text: self.goButton.titleLabel!.text!, font: self.goButton.titleLabel?.font)
+            setView(view: goButton, hide: false)
+
+            
         }
-        
     }
     
     @objc func pinchRecognized(sender: UIPinchGestureRecognizer) {
@@ -628,24 +612,15 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func makeStartElementsVisible()
     {
-        //rocket.isHidden = false
         for planet in planetDict.values
         {
             planet.alpha = 0.0
             setView(view: planet, hide: false)
         }
         
-        //speedLabel.isHidden = false
-//        timeToPlanetLabel.isHidden = false
-//        timeToSpeedBoostLabel.isHidden = false
-//        setACourseButton.isHidden = false
-//        loadingLabel.isHidden = true
-//        menuButton.isHidden = false
         
         setView(view: rocket, hide: false)
-        setView(view: speedLabel, hide: false)
-        setView(view: timeToSpeedBoostLabel, hide: false)
-        setView(view: timeToPlanetLabel, hide: false)
+        setView(view: consoleView, hide: false)
         setView(view: setACourseButton, hide: false)
         setView(view: loadingLabel, hide: true)
         setView(view: signOutButton, hide: false)
@@ -657,9 +632,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     func makeStartElementsInvisible()
     {
         setView(view: rocket, hide: true)
-        setView(view: speedLabel, hide: true)
-        setView(view: timeToSpeedBoostLabel, hide: true)
-        setView(view: timeToPlanetLabel, hide: true)
+        setView(view: consoleView, hide: true)
         setView(view: setACourseButton, hide: true)
         setView(view: loadingLabel, hide: false)
         setView(view: signOutButton, hide: true)
@@ -670,15 +643,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         {
             planet.fillTexture = nil
         }
-        //planetDict = [String: Planet]()
-        
-//        speedLabel.isHidden = true
-//        timeToPlanetLabel.isHidden = true
-//        timeToSpeedBoostLabel.isHidden = true
-//        setACourseButton.isHidden = true
-//        loadingLabel.isHidden = false
-//        planetListTableView.isHidden = true
-//        menuButton.isHidden = true
         
         
     }
@@ -691,8 +655,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             {
                 self.username = dict["nickname"] as? String
                 self.coordinatesSet = dict["coordinatesSet"] as? Bool ?? false
-                
-                self.traveledTo = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
+                self.traveledToDict = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
+                self.flagsDict = dict["flags"] as? [String: Bool] ?? [String: Bool]()
             }
             group.leave()
             NSLog("got user data for \(self.email ?? "nil")")
@@ -727,9 +691,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
 
     func addGameViews()
     {
-        self.view?.addSubview(setACourseButton)
-        self.view?.addSubview(goButton)
-        self.view?.addSubview(speedLabel)
+        self.view?.addSubview(consoleView)
     }
     
     func startPushTimer()
@@ -789,9 +751,20 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func loadPlanetList( _ group: DispatchGroup)
     {
+        group.enter()
         ref.child("planetList").observeSingleEvent(of: .value, with: {
             snap in
             self.planetList = snap.value as? [String]
+            group.leave()
+            NSLog("planet list loaded")
+        }) { (error) in
+            NSLog(error.localizedDescription)
+            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
+        }
+        
+        ref.child("starList").observeSingleEvent(of: .value, with: {
+            snap in
+            self.starList = snap.value as? [String]
             group.leave()
             NSLog("planet list loaded")
         }) { (error) in
@@ -814,7 +787,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                     snap2 in
                     
                     let valueDict = snap2.value as! [String: Any]
-                    let visitorDict = valueDict["visitors"] as? [String: Bool] ?? [String:Bool]()
+                    let visitorDict = valueDict["visitors"] as? [String : Bool] ?? [String : Bool]()
                     let planet = Planet(name: planetString,
                                         radius: valueDict["radius"] as! Double,
                                         startingPlanet: valueDict["startingPlanet"] != nil,
@@ -824,13 +797,35 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                                             type: valueDict["type"] as? String)
                     
                     self.planetDict[planet.name!] = planet
-                    planet.visitorDict = visitorDict
+                    planet.visitorCount = visitorDict.count
                     group.leave()
                     
                 }) { (error) in
                     NSLog(error.localizedDescription)
                     showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
                 }
+                
+                
+            }) { (error) in
+                NSLog(error.localizedDescription)
+                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
+            }
+        }
+        
+        for starString in self.starList
+        {
+            group.enter()
+            ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: {
+                snap in
+                let dict = snap.value as! [String: Any]
+                print(dict)
+                let star = Planet(name: starString, radius: 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
+                                                                                           y: Int(dict["y"] as! Double * coordMultiplier * parsec),
+                                                                                           color: .yellow, type: "Star")
+                let visitorDict = dict["visitors"] as? [String: Bool] ?? [String:Bool]()
+                star.visitorCount = visitorDict.count
+                self.planetDict[starString] = star
+                group.leave()
                 
                 
             }) { (error) in
@@ -989,18 +984,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         if let planet = currentPlanet
         {
-            self.timeToSpeedBoostLabel.text = "Welcome to \(planet.name!)"
+            consoleView.timeToSpeedBoostLabel.text = "Welcome to \(planet.name!)"
         }
         else
         {
-            self.timeToSpeedBoostLabel.text = "Speed boost available in \(formatTime(Int(Double(self.nextSpeedBoostTime - self.timestamp) / 1000)))"
-            
+            consoleView.timeToSpeedBoostLabel.text = "Speed boost available in \(formatTime(Int(Double(self.nextSpeedBoostTime - self.timestamp) / 1000)))"
         }
-        
-        timeToSpeedBoostLabel.frame = CGRect(x: (self.view?.frame.size.width)! / 2 - textWidth(text: self.timeToSpeedBoostLabel.text!, font: self.timeToSpeedBoostLabel.font) / 2,
-                                             y: speedLabel.frame.maxY + 10,
-                                             width: 300,
-                                             height: 30)
     }
     
     func setCurrentAndTravelingPlanets()
@@ -1046,43 +1035,57 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         positionY = currentPlanet.y - adjustedY
         rocket.zRotation -= .pi
         
-        for planet in planetDict.values
-        {
-            planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
-        }
+        movePlanets()
         addVisitorToPlanet(currentPlanet.name!)
         velocity = 0
         setSpeedBoostTimeLabel()
     }
     
+    func movePlanets()
+    {
+        for planet in planetDict.values
+        {
+            planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
+        }
+    }
+    
     func calcSpeed() -> Double
     {
         var speedSum = 40000
-        for key in traveledTo.keys
+        for key in traveledToDict.keys
         {
             if let planet = planetDict[key] {
                 if planet.type == "Planet"
                 {
                     speedSum += 10000
                 }
-                else if planet.type == "Moon" {
+                else if planet.type == "Dwarf Planet"
+                {
+                    speedSum += 7500
+                }
+                else if planet.type == "Moon"
+                {
                     
                     speedSum += 5000
                 }
-                else if planet.type == "Irregular Moon" {
+                else if planet.type == "Irregular Moon"
+                {
                     
                     speedSum += 2500
                 }
-                else if planet.type == "Star" {
+                else if planet.type == "Star"
+                {
                     
                     speedSum += 15000
                 }
-                else if planet.type == "Asteroid" {
+                else if planet.type == "Asteroid"
+                {
                     
                     speedSum += 2000
                 }
-                else if planet.type == "Comet" {
-                    speedSum += 7500
+                else if planet.type == "Comet"
+                {
+                    speedSum += 6666
                 }
             }
         }
@@ -1192,10 +1195,10 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         {
             cell?.detailTextLabel?.text?.append("\nType: \(planet.type!)")
         }
-        let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
-        cell?.detailTextLabel?.text?.append("\nVisited by: \(visitorCount)")
+        //let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
+        cell?.detailTextLabel?.text?.append("\nVisited by: \(planet.visitorCount)")
         
-        if (traveledTo[planet.name!] == true && planet != currentPlanet)
+        if (traveledToDict[planet.name!] == true && planet != currentPlanet)
         {
             cell?.detailTextLabel?.text?.append("\nYou have been here")
         }

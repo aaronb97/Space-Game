@@ -18,10 +18,12 @@ class Planet: SKShapeNode {
     var y: Int!
     var distance: Double!
     var visitorDict: [String: Bool]!
+    
     var color: UIColor!
     var type: String!
+    var visitorCount: Int = 0
     
-    init(name: String, radius: Double, startingPlanet: Bool, x: Int, y: Int, color: UIColor!, type: String!) {
+    init(name: String, radius: Double, startingPlanet: Bool = false, x: Int, y: Int, color: UIColor!, type: String!) {
         
         self.radius = radius
         self.startingPlanet = startingPlanet
