@@ -14,6 +14,8 @@ class ConsoleView: UIView {
     var speedLabel = UILabel()
     var timeToDestLabel = UILabel()
     var timeToSpeedBoostLabel = UILabel()
+    var notificationLabel = UILabel()
+    var notificationTimer : Timer!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -41,8 +43,27 @@ class ConsoleView: UIView {
         timeToSpeedBoostLabel.topAnchor.constraint(equalTo: timeToDestLabel.bottomAnchor, constant: 5).isActive = true
         timeToSpeedBoostLabel.widthAnchor.constraint(equalTo: self.widthAnchor, constant: -5).isActive = true
         timeToSpeedBoostLabel.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        
+        addSubview(notificationLabel)
+        formatLabel(notificationLabel, color: UIColor.yellow)
+        notificationLabel.translatesAutoresizingMaskIntoConstraints = false
+        notificationLabel.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 5).isActive = true
+        notificationLabel.topAnchor.constraint(equalTo: timeToSpeedBoostLabel.bottomAnchor, constant: 5).isActive = true
+        notificationLabel.widthAnchor.constraint(equalTo: self.widthAnchor, constant: -5).isActive = true
+        notificationLabel.heightAnchor.constraint(equalToConstant: 30).isActive = true
 
         self.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+    }
+    
+    @objc func resetNotification()
+    {
+        notificationLabel.text = ""
+    }
+    
+    func setNotification(_ text: String)
+    {
+        notificationLabel.text = text
+        Timer.scheduledTimer(timeInterval: 10.0, target: self, selector: #selector(resetNotification), userInfo: nil, repeats: false)
     }
     
     public override func draw(_ frame: CGRect) {
@@ -65,10 +86,10 @@ class ConsoleView: UIView {
         fatalError("This class does not support NSCoding")
     }
     
-    func formatLabel(_ label: UILabel)
+    func formatLabel(_ label: UILabel, color: UIColor = UIColor.white)
     {
         label.font = UIFont(name: "Courier", size: 13)
-        label.textColor = .white
+        label.textColor = color
         label.numberOfLines = 2
     }
     

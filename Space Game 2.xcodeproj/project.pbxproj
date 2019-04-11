@@ -13,6 +13,7 @@
 		4E294704225A893D00CF996B /* Words.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E294703225A893D00CF996B /* Words.swift */; };
 		4E294706225BD45800CF996B /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E294705225BD45800CF996B /* Extensions.swift */; };
 		4E294708225EC24D00CF996B /* ConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E294707225EC24D00CF996B /* ConsoleView.swift */; };
+		4E29470B225FA5AD00CF996B /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E29470A225FA5AD00CF996B /* MenuView.swift */; };
 		4E81B4DE224FC7EA0010FA9C /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81B4DD224FC7EA0010FA9C /* Utility.swift */; };
 		4E81B4E0225278AD0010FA9C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4E81B4DF225278AC0010FA9C /* GoogleService-Info.plist */; };
 		4ECFDEE522447B2E002457BC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEE422447B2E002457BC /* AppDelegate.swift */; };
@@ -31,6 +32,7 @@
 		4E294703225A893D00CF996B /* Words.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Words.swift; sourceTree = "<group>"; };
 		4E294705225BD45800CF996B /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		4E294707225EC24D00CF996B /* ConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsoleView.swift; sourceTree = "<group>"; };
+		4E29470A225FA5AD00CF996B /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		4E81B4DD224FC7EA0010FA9C /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		4E81B4DF225278AC0010FA9C /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		4ECFDEE122447B2E002457BC /* Space Game 2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Space Game 2.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -62,6 +64,7 @@
 			isa = PBXGroup;
 			children = (
 				4E294707225EC24D00CF996B /* ConsoleView.swift */,
+				4E29470A225FA5AD00CF996B /* MenuView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -306,6 +309,7 @@
 				4E0B8FC322456AF5006402FA /* Planet.swift in Sources */,
 				4E294706225BD45800CF996B /* Extensions.swift in Sources */,
 				4E294708225EC24D00CF996B /* ConsoleView.swift in Sources */,
+				4E29470B225FA5AD00CF996B /* MenuView.swift in Sources */,
 				4ECFDEED22447B2E002457BC /* GameViewController.swift in Sources */,
 				4E0DC7D42246B9FC00805BF8 /* SignInViewController.swift in Sources */,
 				4ECFDEE522447B2E002457BC /* AppDelegate.swift in Sources */,

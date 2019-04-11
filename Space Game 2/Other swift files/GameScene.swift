@@ -17,7 +17,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true]
     
-    var testView: UIView!
+    var menuView: UIView!
     
     var xPositionLabel: UILabel!
     var yPositionLabel: UILabel!
@@ -78,7 +78,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var setACourseButton = UIButton()
     var goButton = UIButton()
     var cancelButton = UIButton()
-    let signOutButton = UIButton()
+    let menuButton = UIButton()
     
     var planetSelection: Planet!
     var travelingTo: Planet! {
@@ -109,7 +109,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             {
                 setSpeedBoostTimeLabel()
                 setTimeToPlanetLabel()
-                calculateIfBoostedOrLanded()
+                checkIfBoostedOrLanded()
             }
         }
     }
@@ -235,11 +235,11 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         formatLabel(versionLabel)
         formatLabel(usernameLabel)
         
-        formatButton(signOutButton)
-        signOutButton.isHidden = true
+        formatButton(menuButton)
+        menuButton.isHidden = true
         
         self.view?.addSubview(versionLabel)
-        self.view?.addSubview(signOutButton)
+        self.view?.addSubview(menuButton)
         self.view?.addSubview(usernameLabel)
         self.view?.addSubview(setACourseButton)
         
@@ -247,12 +247,12 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         usernameLabel.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
         usernameLabel.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
         
-        signOutButton.setTitle("Sign Out", for: .normal)
-        signOutButton.translatesAutoresizingMaskIntoConstraints = false
-        signOutButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
-        signOutButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
-        signOutButton.widthAnchor.constraint(equalToConstant: textWidth(text: signOutButton.titleLabel!.text!, font: signOutButton.titleLabel!.font!) + 15).isActive = true
-        signOutButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        menuButton.setTitle("Menu", for: .normal)
+        menuButton.translatesAutoresizingMaskIntoConstraints = false
+        menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
+        menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
+        menuButton.widthAnchor.constraint(equalToConstant: textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
+        menuButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
 
         
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -270,6 +270,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         self.view?.addSubview(loadingLabel)
 
         localTime = Date().timeIntervalSinceReferenceDate
+        
+        menuView = MenuView(frame: self.frame, gamescene: self)
+        menuView.isHidden = true
+        self.view?.addSubview(menuView)
+        menuView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        menuView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        menuView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        menuView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     }
     
     func createStarfield()
@@ -364,7 +372,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: setACourseButton, hide: true)
             setView(view: planetListTableView, hide: false)
             setView(view: consoleView, hide: true)
-            setView(view: signOutButton, hide: true)
+            setView(view: menuButton, hide: true)
             setView(view: cancelButton, hide: false)
             
         }
@@ -374,7 +382,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: setACourseButton, hide: false)
             setView(view: planetListTableView, hide: true)
             setView(view: consoleView, hide: false)
-            setView(view: signOutButton, hide: false)
+            setView(view: menuButton, hide: false)
             setView(view: cancelButton, hide: true)
             
             willLandOnPlanetTime = Int.max
@@ -396,21 +404,40 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: setACourseButton, hide: false)
             setView(view: planetListTableView, hide: true)
             setView(view: consoleView, hide: false)
-            setView(view: signOutButton, hide: false)
+            setView(view: menuButton, hide: false)
             setView(view: cancelButton, hide: true)
         }
-        else if sender == signOutButton
+        else if sender == menuButton
         {
-            for planet in planetDict.values
-            {
-                planet.fillTexture = nil
-            }
-            planetDict = [String: Planet]()
-            pushPositionToServer()
-            GIDSignIn.sharedInstance()?.signOut()
-            UserDefaults.standard.set(false, forKey: "StaySignedIn")
-            appDelegate.showSignInScreen()
+            setView(view: menuView, hide: false)
+            
+            setView(view: goButton, hide: true)
+            setView(view: setACourseButton, hide: true)
+            setView(view: consoleView, hide: true)
+            setView(view: menuButton, hide: true)
         }
+    }
+    
+    func prepareSignOut()
+    {
+        for planet in planetDict.values
+        {
+            planet.fillTexture = nil
+        }
+        planetDict = [String: Planet]()
+        pushPositionToServer()
+        GIDSignIn.sharedInstance()?.signOut()
+        UserDefaults.standard.set(false, forKey: "StaySignedIn")
+        appDelegate.showSignInScreen()
+    }
+    
+    func hideMenu()
+    {
+        setView(view: menuView, hide: true)
+        
+        setView(view: setACourseButton, hide: false)
+        setView(view: consoleView, hide: false)
+        setView(view: menuButton, hide: false)
     }
     
     func pushNextSpeedBoostTime()
@@ -458,23 +485,42 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     {
         guard let planet = travelingTo else {return}
         guard let radius = planet.radius else {return}
-        if (distance(x1: rocket.position.x, x2: planet.position.x, y1: rocket.position.y, y2: planet.position.y) < radius) //touch down on a planet
+        if distance(x1: rocket.position.x, x2: planet.position.x, y1: rocket.position.y, y2: planet.position.y) < radius //touch down on a planet
         {
 
             currentPlanet = planet
             travelingTo = nil
             rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
             
-            if (traveledToDict[currentPlanet.name!] == nil)
+            if traveledToDict[currentPlanet.name!] == nil
             {
                 addVisitorToPlanet(currentPlanet.name!)
             }
             
+            pushFlagsDict()
             traveledToDict[currentPlanet.name!] = true
             velocity = 0
             pushPositionToServer()
             setSpeedBoostTimeLabel()
         }
+    }
+    
+    let currentFlag = "Flag (v0,2 edition)"
+    
+    func checkFlags()
+    {
+        let flagName = "\(currentPlanet.name!) \(currentFlag)"
+        if flagsDict[flagName] == nil
+        {
+            flagsDict[flagName] = true
+            pushFlagsDict()
+            consoleView.setNotification("You have obtained '\(flagName)'!")
+        }
+    }
+    
+    func pushFlagsDict()
+    {
+        ref.child("users/\(email!)/data/flags").setValue(flagsDict)
     }
     
     func addVisitorToPlanet(_ name: String)
@@ -593,7 +639,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                     {
                         self.moveRocketToCurrentPlanet()
                     }
-                    self.calculateIfBoostedOrLanded()
+                    self.checkIfBoostedOrLanded()
 
                     self.startPushTimer()
                     self.calculateVelocities()
@@ -623,7 +669,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setView(view: consoleView, hide: false)
         setView(view: setACourseButton, hide: false)
         setView(view: loadingLabel, hide: true)
-        setView(view: signOutButton, hide: false)
+        setView(view: menuButton, hide: false)
         
         
         self.addChild(camera!)
@@ -635,7 +681,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setView(view: consoleView, hide: true)
         setView(view: setACourseButton, hide: true)
         setView(view: loadingLabel, hide: false)
-        setView(view: signOutButton, hide: true)
+        setView(view: menuButton, hide: true)
         
         self.removeAllChildren()
         
@@ -818,7 +864,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: {
                 snap in
                 let dict = snap.value as! [String: Any]
-                print(dict)
                 let star = Planet(name: starString, radius: 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
                                                                                            y: Int(dict["y"] as! Double * coordMultiplier * parsec),
                                                                                            color: .yellow, type: "Star")
@@ -954,7 +999,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    func calculateIfBoostedOrLanded()
+    func checkIfBoostedOrLanded()
     {
         if (self.timestamp > willLandOnPlanetTime && travelingTo != nil)
         {
@@ -965,6 +1010,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         else if (self.timestamp > self.nextSpeedBoostTime)
         {
             nextSpeedBoostTime = Int.max
+            consoleView.setNotification("Your speed has doubled!")
             NSLog("speed boosted")
             velocity *= 2
             pushNextSpeedBoostTime()
@@ -1039,6 +1085,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         addVisitorToPlanet(currentPlanet.name!)
         velocity = 0
         setSpeedBoostTimeLabel()
+        checkFlags()
     }
     
     func movePlanets()
@@ -1109,7 +1156,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                             {
                                 planet?.fillTexture = SKTexture.init(image: image)
                                 planet?.fillColor = .white
-                                print("set \(planet!.name!) texture")
                             }
                         }
                     }
@@ -1119,7 +1165,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                         {
                             planet?.fillTexture = nil
                             planet?.fillColor = planet?.color ?? UIColor.moonColor
-                            print("reset \(planet!.name!) texture to nil")
                         }
                     }
                 }
