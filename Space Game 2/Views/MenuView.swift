@@ -11,29 +11,12 @@ import UIKit
 
 class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        return flagsArray.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
-        
-        if cell == nil {
-            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
-        }
-        
-        cell?.textLabel?.text = flagsArray[indexPath.row].replacingOccurrences(of: ",", with: ".")
-        return cell!
-    }
-    
-    
     let signOutButton = UIButton()
     let flagsButton = UIButton()
     let backButton = UIButton()
     let flagTableView = UITableView()
-    var gamescene: GameScene!
-    var flagsArray = [String]()
+    weak var gameScene: GameScene!
+    var flagNames = [String]()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -57,12 +40,12 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         flagsButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         addSubview(backButton)
-        formatButton(backButton)
-        backButton.setTitle("Back", for: .normal)
+        backButton.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
+        backButton.setImage(UIImage(named: "backIcon"), for: .normal)
         backButton.translatesAutoresizingMaskIntoConstraints = false
         backButton.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 5).isActive = true
         backButton.topAnchor.constraint(equalTo: self.safeTopAnchor, constant: 20).isActive = true
-        backButton.widthAnchor.constraint(equalToConstant: 70).isActive = true
+        backButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         addSubview(flagTableView)
@@ -81,8 +64,8 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
     convenience init(frame: CGRect, gamescene: GameScene)
     {
         self.init(frame: frame)
-        self.gamescene = gamescene
-        self.flagsArray = Array(gamescene.flagsDict.keys)
+        self.gameScene = gamescene
+        self.flagNames = Array(gamescene.flagsDict.keys)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -105,24 +88,44 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
     {
         if button == signOutButton
         {
-            gamescene.prepareSignOut()
+            gameScene.prepareSignOut()
         }
         else if button == backButton
         {
             if flagTableView.isHidden == false
             {
                 setView(view: flagTableView, hide: true)
+                setView(view: flagsButton, hide: false)
             }
             else
             {
-                gamescene.hideMenu()
+                gameScene.hideMenu()
             }
         }
         else if button == flagsButton
         {
-            flagsArray = Array(gamescene.flagsDict.keys)
+            setView(view: flagsButton, hide: true)
+            flagNames = Array(gameScene.flagsDict.keys)
             flagTableView.reloadData()
             setView(view: flagTableView, hide: false)
         }
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        return flagNames.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
+        
+        if cell == nil {
+            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
+        }
+        
+        let flagNumber = (gameScene.flagsDict[flagNames[indexPath.row]] as! [String: Any])["number"] as! Int
+        let flagNumberText = flagNumber > 0 ? "#\(flagNumber)" : ""
+        cell?.textLabel?.text = "\(flagNames[indexPath.row].replacingOccurrences(of: ",", with: ".")) \(flagNumberText)"
+        return cell!
     }
 }

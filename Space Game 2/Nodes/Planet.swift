@@ -19,11 +19,11 @@ class Planet: SKShapeNode {
     var distance: Double!
     var visitorDict: [String: Bool]!
     
-    var color: UIColor!
+    var color : UIColor!
     var type: String!
     var visitorCount: Int = 0
     
-    init(name: String, radius: Double, startingPlanet: Bool = false, x: Int, y: Int, color: UIColor!, type: String!) {
+    init(name: String, radius: Double, startingPlanet: Bool = false, x: Int, y: Int, color: UIColor = .moonColor, type: String!) {
         
         self.radius = radius
         self.startingPlanet = startingPlanet
@@ -32,19 +32,22 @@ class Planet: SKShapeNode {
         super.init()
         
         self.color = color
-        
-        self.fillColor = (color != nil ? color : .moonColor)!
+        self.fillColor = color
         
         self.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -radius, y: -radius),
                         size: CGSize(width: radius * 2, height: radius * 2)),
                            transform: nil)
         
-        self.strokeColor = (color != nil ? color : .moonColor)!
+        self.strokeColor = color
         
         self.name = name
         
         self.x = x
         self.y = y
+    }
+    
+    deinit {
+        print("\(name!) deinited")
     }
     
     func calculateDistance(x: Int, y: Int)

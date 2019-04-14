@@ -17,12 +17,19 @@ import GameplayKit
      let secondsPerHour : Double = 3600
      let coordMultiplier = 100.0
     
-     func setView(view: UIView, hide: Bool) {
-        
-        UIView.transition(with: view, duration: 0.5, options: .transitionCrossDissolve, animations: {
-            view.isHidden = hide
-        })
-
+func setView(view: UIView, hide: Bool, option: UIView.AnimationOptions! = UIView.AnimationOptions.transitionCrossDissolve) {
+    
+        if let o = option
+        {
+            UIView.transition(with: view, duration: 0.5, options: o, animations: {
+                view.isHidden = hide
+            })
+        }
+        else {
+            UIView.transition(with: view, duration: 0.5, animations: {
+                view.isHidden = hide
+            })
+        }
     }
 
     func setView(view: SKNode!, hide: Bool, setStartAlpha: Bool = true)

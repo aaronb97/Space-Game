@@ -34,7 +34,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
                 print(error.localizedDescription)
                 return
             }
-            print("signed in")
             
             if !signInViewController.stayLoggedInSwitch.isHidden
             {
@@ -55,7 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         
         if let view = self.window?.rootViewController?.view as! SKView? {
             
-            scene = GameScene(size: view.bounds.size)
+            scene = GameScene(size: view.bounds.size, ref: ref)
             scene.scaleMode = .aspectFill
             view.presentScene(scene)
             
@@ -80,9 +79,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.window!.backgroundColor = UIColor.spaceColor
-        
         self.window!.rootViewController = signInViewController
-        
         self.window!.makeKeyAndVisible()
         
         return true
@@ -90,6 +87,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     
     func showSignInScreen()
     {
+        invalidateSceneTimers()
         self.window?.rootViewController?.view = UIView()
         signInViewController = SignInViewController()
         self.window?.rootViewController = signInViewController
@@ -104,15 +102,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
                                                      sourceApplication:options[UIApplication.OpenURLOptionsKey.sourceApplication] as? String,
                                                      annotation: [:])
     }
+    
+    func invalidateSceneTimers()
+    {
+        scene.pushTimer.invalidate()
+        scene.loadDateTimer.invalidate()
+        scene.calcVelocityTimer.invalidate()
+        scene.loadPlanetImagesTimer.invalidate()
+    }
 
     func applicationWillResignActive(_ application: UIApplication) {
         if scene != nil
         {
             scene.pushPositionToServer()
-            scene.pushTimer.invalidate()
-            scene.loadDateTimer.invalidate()
-            scene.calcVelocityTimer.invalidate()
-            scene.loadPlanetImagesTimer.invalidate()
+            invalidateSceneTimers()
         }
         print("resigned")
     }

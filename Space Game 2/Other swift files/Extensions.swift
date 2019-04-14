@@ -121,7 +121,30 @@ extension UIView {
         }
         return self.bottomAnchor
     }
+    
+    func constraintWithIdentifier(_ id: String) -> NSLayoutConstraint!
+    {
+        for constraint in self.constraints {
+            if constraint.identifier == id {
+                return constraint
+            }
+        }
+        return nil
+    }
 }
+
+//extension UIWindow
+//{
+//    func constraintWithIdentifier(_ id: String) -> NSLayoutConstraint!
+//    {
+//        for constraint in self.constraints {
+//            if constraint.identifier == id {
+//                return constraint
+//            }
+//        }
+//        return nil
+//    }
+//}
 
 extension UIButton {
     func setBackgroundColor(color: UIColor, forState: UIControl.State) {
@@ -136,3 +159,5 @@ extension UIButton {
         }
     }
 }
+
+

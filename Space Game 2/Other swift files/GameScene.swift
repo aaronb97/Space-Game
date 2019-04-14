@@ -13,7 +13,19 @@ import FirebaseDatabase
 import GoogleSignIn
 
 
-class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
+class GameScene: SKScene {
+    
+    weak var ref: DatabaseReference!
+
+    convenience init (size: CGSize, ref: DatabaseReference)
+    {
+        self.init(size: size)
+        self.ref = ref
+    }
+   
+    deinit {
+        print("de inited")
+    }
     
     let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true]
     
@@ -26,7 +38,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var yVelocityLabel: UILabel!
     var loadingLabel = UILabel()
 
-    var ref: DatabaseReference!
     
     var username: String! {
         didSet {
@@ -43,7 +54,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     var usernameLabel = UILabel()
     
-    let appDelegate = UIApplication.shared.delegate as! AppDelegate
+    weak var appDelegate : AppDelegate!
     
     var dateString : String!
     
@@ -52,7 +63,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var velocityX = 0.0
     var velocityY = 0.0
 
-    
     var velocity : Double = 0 {
         didSet {
             setSpeedLabel()
@@ -73,8 +83,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     let sceneCam = SKCameraNode()
     
-    var planetListTableView = UITableView()
-
     var setACourseButton = UIButton()
     var goButton = UIButton()
     var cancelButton = UIButton()
@@ -87,9 +95,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    let consoleView = ConsoleView()
+    var consoleView : ConsoleView!
 
-    
     var currentPlanet : Planet! {
         didSet {
             if (currentPlanet != nil)
@@ -114,7 +121,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    
     var nextSpeedBoostTime = Int.max
     var willLandOnPlanetTime = Int.max
     
@@ -126,7 +132,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     var localTime: TimeInterval!
     
     var traveledToDict = [String: Bool]()
-    var flagsDict = [String: Bool]()
+    var flagsDict = [String: Any]()
     
     var versionLabel = UILabel()
     
@@ -151,6 +157,10 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     }
     
     override func didMove(to view: SKView) {
+        appDelegate = UIApplication.shared.delegate as? AppDelegate
+
+        menuView = MenuView(frame: self.frame, gamescene: self)
+        consoleView = ConsoleView(gameScene: self)
         
         self.view?.backgroundColor = .spaceColor
         self.view?.window?.backgroundColor = .spaceColor
@@ -161,19 +171,24 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         
         self.view?.window?.addSubview(consoleView)
         consoleView.translatesAutoresizingMaskIntoConstraints = false
-        consoleView.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        consoleView.bottomAnchor.constraint(equalTo: view.centerYAnchor, constant: 250).isActive = true
-        consoleView.widthAnchor.constraint(equalToConstant: 300).isActive = true
-        consoleView.heightAnchor.constraint(equalToConstant: 200).isActive = true
-        
+
+        let consoleCenterXConstraint = NSLayoutConstraint(item: consoleView!, attribute: .centerX, relatedBy: .equal, toItem: view.window, attribute: .centerX, multiplier: 1, constant: 0)
+        let consoleBottomConstraint = NSLayoutConstraint(item: consoleView!, attribute: .bottom, relatedBy: .equal, toItem: view.window, attribute: .bottomMargin, multiplier: 1, constant: -25)
+        let consoleWidthConstraint = NSLayoutConstraint(item: consoleView!, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 300)
+        let consoleHeightConstraint = NSLayoutConstraint(item: consoleView!, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1, constant: 225)
+        consoleCenterXConstraint.identifier = constraintEnum.consoleCenterX.rawValue
+        consoleBottomConstraint.identifier = constraintEnum.consoleBottom.rawValue
+        consoleWidthConstraint.identifier = constraintEnum.consoleWidth.rawValue
+        consoleHeightConstraint.identifier = constraintEnum.consoleHeight.rawValue
+        view.window!.addConstraints([consoleCenterXConstraint, consoleBottomConstraint, consoleWidthConstraint, consoleHeightConstraint])
         
         let pinch = UIPinchGestureRecognizer(target: self, action:#selector(self.pinchRecognized(sender:)))
         self.view?.addGestureRecognizer(pinch)
         
-        ref = Database.database().reference()
+        //ref = Database.database().reference()
         email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
         
-        ref.child("users").child(email).observeSingleEvent(of: .value, with: {
+        ref.child("users").child(email).observeSingleEvent(of: .value, with: { [unowned self]
             snap in
                 if (!snap.exists())
                 {
@@ -184,18 +199,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                     self.loadEverything()
                 }
         })
-
-        planetListTableView.rowHeight = CGFloat(100)
-        self.scene?.view?.addSubview(planetListTableView)
-        planetListTableView.delegate = self
-        planetListTableView.dataSource = self
-        planetListTableView.isHidden = true
-        
-        planetListTableView.translatesAutoresizingMaskIntoConstraints = false
-        planetListTableView.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
-        planetListTableView.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
-        planetListTableView.topAnchor.constraint(equalTo: view.safeTopAnchor, constant: 15).isActive = true
-        planetListTableView.bottomAnchor.constraint(equalTo: view.safeBottomAnchor, constant: -160).isActive = true
         
         setACourseButton.setTitle("Set a Course", for: .normal)
         let setACourseButtonWidth = 130.0
@@ -207,22 +210,20 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         formatButton(goButton)
         goButton.isHidden = true
         goButton.translatesAutoresizingMaskIntoConstraints = false
-        goButton.topAnchor.constraint(equalTo: planetListTableView.bottomAnchor, constant: 20).isActive = true
+        goButton.topAnchor.constraint(equalTo: consoleView.bottomAnchor, constant: 20).isActive = true
         goButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         goButton.widthAnchor.constraint(equalToConstant: 200).isActive = true
-        
         goButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         self.view?.addSubview(cancelButton)
         formatButton(cancelButton)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        cancelButton.topAnchor.constraint(equalTo: planetListTableView.bottomAnchor, constant: 70).isActive = true
+        cancelButton.bottomAnchor.constraint(equalTo: view.safeBottomAnchor, constant: -20).isActive = true
         cancelButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
         cancelButton.widthAnchor.constraint(equalToConstant: 100).isActive = true
         cancelButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         cancelButton.isHidden = true
         cancelButton.setTitle("Cancel", for: .normal)
-        
         
         versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String) (build \(Bundle.main.infoDictionary!["CFBundleVersion"] as! String))"
         versionLabel.frame = CGRect(x: 20.0, y: (self.view?.frame.maxY)! - 25, width: 300, height: 30)
@@ -235,8 +236,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         formatLabel(versionLabel)
         formatLabel(usernameLabel)
         
-        formatButton(menuButton)
-        menuButton.isHidden = true
         
         self.view?.addSubview(versionLabel)
         self.view?.addSubview(menuButton)
@@ -247,12 +246,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         usernameLabel.leftAnchor.constraint(equalTo: view.safeLeftAnchor, constant: 5).isActive = true
         usernameLabel.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
         
-        menuButton.setTitle("Menu", for: .normal)
+        menuButton.isHidden = true
+        menuButton.setImage(UIImage(named: "menuIcon"), for: .normal)
+        menuButton.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
         menuButton.translatesAutoresizingMaskIntoConstraints = false
-        menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -5).isActive = true
-        menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor).isActive = true
-        menuButton.widthAnchor.constraint(equalToConstant: textWidth(text: menuButton.titleLabel!.text!, font: menuButton.titleLabel!.font!) + 15).isActive = true
-        menuButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        menuButton.rightAnchor.constraint(equalTo: view.safeRightAnchor, constant: -15).isActive = true
+        menuButton.topAnchor.constraint(equalTo: view.safeTopAnchor, constant: 15).isActive = true
+        menuButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        menuButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
 
         
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -271,70 +272,14 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
 
         localTime = Date().timeIntervalSinceReferenceDate
         
-        menuView = MenuView(frame: self.frame, gamescene: self)
+        
+
         menuView.isHidden = true
         self.view?.addSubview(menuView)
         menuView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
         menuView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
         menuView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
         menuView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
-    }
-    
-    func createStarfield()
-    {
-        for key in starfieldDict.keys
-        {
-            let subDict = starfieldDict[key] as! [String: Double]
-            for i in 0...1 {
-                for j in 0...1 {
-                    let width : CGFloat = starFieldWidth
-                    let height : CGFloat = starFieldHeight
-                    let starfield = SKSpriteNode()
-                    starfield.texture = SKTexture(imageNamed: key)
-                    starfield.name = key
-                    starfield.zPosition = 0
-                    starfield.alpha = CGFloat(subDict["alpha"]!)
-                    starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-                    starfield.size = CGSize(width: width, height: height)
-                    starfield.position = CGPoint(x: width * CGFloat(i) - width / 2,
-                                                 y: height * CGFloat(j) - height / 2)
-                    starfield.alpha = 0
-                    self.addChild(starfield)
-                    setView(view: starfield, hide: false)
-                }
-            }
-        }
-    }
-    
-    func moveStarField(_ time: TimeInterval)
-    {
-        for key in starfieldDict.keys
-        {
-            let width : CGFloat = starFieldWidth
-            let height : CGFloat = starFieldHeight
-            let subDict = starfieldDict[key] as! [String: Double]
-            self.enumerateChildNodes(withName: key, using: ({
-                (node, error) in
-                node.position = CGPoint(x: node.position.x - CGFloat(sqrtPreserveSign(self.velocityX) / subDict["resistance"]! * time), y: node.position.y - CGFloat(sqrtPreserveSign(self.velocityY) / subDict["resistance"]! * time))
-                if node.position.x > width
-                {
-                    node.position.x = -width
-                }
-                else if node.position.x < -width
-                {
-                    node.position.x = width
-                }
-                
-                if node.position.y > height
-                {
-                    node.position.y = -height
-                }
-                else if node.position.y < -height
-                {
-                    node.position.y = height
-                }
-            }))
-        }
     }
     
     func formatLabel(_ label: UILabel)
@@ -367,20 +312,17 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             planetArray = Array(planetDict.values)
             planetArray.sort(by: {$0.distance < $1.distance})
             
-            planetListTableView.reloadData()
-            
             setView(view: setACourseButton, hide: true)
-            setView(view: planetListTableView, hide: false)
-            setView(view: consoleView, hide: true)
             setView(view: menuButton, hide: true)
             setView(view: cancelButton, hide: false)
+            formatConsole(setACourseView: true)
             
         }
         else if sender == goButton
         {
             setView(view: goButton, hide: true)
+            
             setView(view: setACourseButton, hide: false)
-            setView(view: planetListTableView, hide: true)
             setView(view: consoleView, hide: false)
             setView(view: menuButton, hide: false)
             setView(view: cancelButton, hide: true)
@@ -397,15 +339,21 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             pushNextSpeedBoostTime()
             pushWillLandOnPlanetTime()
             
+            formatConsole(setACourseView: false)
+            
         }
         else if sender == cancelButton
         {
             setView(view: goButton, hide: true)
+            
             setView(view: setACourseButton, hide: false)
-            setView(view: planetListTableView, hide: true)
             setView(view: consoleView, hide: false)
             setView(view: menuButton, hide: false)
             setView(view: cancelButton, hide: true)
+            
+
+            formatConsole(setACourseView: false)
+            
         }
         else if sender == menuButton
         {
@@ -434,7 +382,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     func hideMenu()
     {
         setView(view: menuView, hide: true)
-        
         setView(view: setACourseButton, hide: false)
         setView(view: consoleView, hide: false)
         setView(view: menuButton, hide: false)
@@ -490,6 +437,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
 
             currentPlanet = planet
             travelingTo = nil
+            checkFlags()
             rocket.zRotation = angleBetween(x1: rocket.position.x, y1: rocket.position.y, x2: currentPlanet.position.x, y2: currentPlanet.position.y) + .pi / 2
             
             if traveledToDict[currentPlanet.name!] == nil
@@ -505,16 +453,34 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    let currentFlag = "Flag (v0,2 edition)"
+    let currentFlag = "Flag (v0,3 edition)"
     
     func checkFlags()
     {
         let flagName = "\(currentPlanet.name!) \(currentFlag)"
         if flagsDict[flagName] == nil
         {
-            flagsDict[flagName] = true
-            pushFlagsDict()
-            consoleView.setNotification("You have obtained '\(flagName)'!")
+            ref.child("flags/\(flagName)/count").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
+                
+                var count = 0
+                if !snapshot.exists()
+                {
+                    count = 1
+                    self.flagsDict[flagName] = ["number": 1]
+                    self.ref.child("flags/\(flagName)/count").setValue(2)
+                }
+                else
+                {
+                    count = snapshot.value as! Int
+                    self.flagsDict[flagName] = ["number": count]
+                    self.ref.child("flags/\(flagName)/count").setValue(count + 1)
+                }
+                
+                self.pushFlagsDict()
+                self.consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: ".")) #\(count)'!")
+            })
+            
+            
         }
     }
     
@@ -586,7 +552,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                 }
                 planet.glowWidth = newScale
             }
-            if camera!.xScale > CGFloat(1.4)
+            if camera!.xScale > CGFloat(1.5)
             {
                 for key in starfieldDict.keys
                 {
@@ -595,6 +561,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                         setView(view: node, hide: true, setStartAlpha: false)
                     }))
                 }
+                setView(view: consoleView, hide: true)
+                setView(view: setACourseButton, hide: true)
             }
             else
             {
@@ -605,6 +573,8 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                         setView(view: node, hide: false, setStartAlpha: false)
                     }))
                 }
+                setView(view: consoleView, hide: false)
+                setView(view: setACourseButton, hide: false)
             }
             
             sender.scale = 1.0
@@ -664,15 +634,37 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             setView(view: planet, hide: false)
         }
         
-        
         setView(view: rocket, hide: false)
         setView(view: consoleView, hide: false)
         setView(view: setACourseButton, hide: false)
         setView(view: loadingLabel, hide: true)
         setView(view: menuButton, hide: false)
         
+        setView(view: goButton, hide: true)
+        setView(view: cancelButton, hide: true)
+        formatConsole(setACourseView: false)
+        
         
         self.addChild(camera!)
+    }
+    
+    func formatConsole(setACourseView: Bool)
+    {
+        if setACourseView {
+            view?.window!.constraintWithIdentifier(constraintEnum.consoleHeight.rawValue)!.constant = 375
+            view?.window!.constraintWithIdentifier(constraintEnum.consoleBottom.rawValue)!.constant = -175
+            consoleView.preparePlanetList()
+        }
+        else
+        {
+            view?.window!.constraintWithIdentifier(constraintEnum.consoleHeight.rawValue)!.constant = 225
+            view?.window!.constraintWithIdentifier(constraintEnum.consoleBottom.rawValue)!.constant = -25
+            consoleView.prepareGo()
+        }
+        UIView.animate(withDuration: 0.5)
+        {
+            self.view?.window!.layoutIfNeeded()
+        }
     }
     
     func makeStartElementsInvisible()
@@ -682,6 +674,9 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         setView(view: setACourseButton, hide: true)
         setView(view: loadingLabel, hide: false)
         setView(view: menuButton, hide: true)
+        setView(view: goButton, hide: true)
+        setView(view: cancelButton, hide: true)
+        setView(view: menuView, hide: true)
         
         self.removeAllChildren()
         
@@ -695,14 +690,26 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     
     func getUserData(_ group: DispatchGroup)
     {
-        ref.child("users/\(email!)/data").observeSingleEvent(of: .value, with: { (snapshot) in
+        ref.child("users/\(email!)/data").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
             
             if let dict = snapshot.value as? [String: Any]
             {
                 self.username = dict["nickname"] as? String
                 self.coordinatesSet = dict["coordinatesSet"] as? Bool ?? false
                 self.traveledToDict = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
-                self.flagsDict = dict["flags"] as? [String: Bool] ?? [String: Bool]()
+                if let tempFlagsDict = dict["flags"] as? [String: Bool]
+                {
+                    for key in tempFlagsDict.keys
+                    {
+                        self.flagsDict[key] = ["number": 0]
+                    }
+                    self.pushFlagsDict()
+                }
+                else if let tempFlagsDict = dict["flags"] as? [String: Any]
+                {
+                    self.flagsDict = tempFlagsDict
+                }
+                //self.flagsDict = dict["flags"] as? [String: Bool] ?? [String: Bool]()
             }
             group.leave()
             NSLog("got user data for \(self.email ?? "nil")")
@@ -716,9 +723,9 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     func nicknameSetup()
     {
         let nickname = "\(Words.adjectives[Int.random(in: 0 ..< Words.adjectives.count)])\(Words.nouns[Int.random(in: 0 ..< Words.nouns.count)])\(Int.random(in: 0 ..< 10000))"
-        ref.child("nicknames").child(nickname).observeSingleEvent(of: .value, with: { (snapshot) in
+        ref.child("nicknames/\(nickname)").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
             
-            if (snapshot.exists() && (snapshot.value as! Bool) == true)  //username already exits
+            if snapshot.exists() && (snapshot.value as! Bool) == true  //username already exits
             {
                 self.nicknameSetup()
             }
@@ -770,7 +777,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         var date : NSDate!
         
         ref.child("timestamp").setValue(ServerValue.timestamp(), withCompletionBlock: { (error, snapshot) in
-            self.ref.child("timestamp").observeSingleEvent(of: .value, with: {
+            self.ref.child("timestamp").observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 if let t = snap.value as? TimeInterval {
                     
@@ -798,7 +805,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     func loadPlanetList( _ group: DispatchGroup)
     {
         group.enter()
-        ref.child("planetList").observeSingleEvent(of: .value, with: {
+        ref.child("planetList").observeSingleEvent(of: .value, with: { [unowned self]
             snap in
             self.planetList = snap.value as? [String]
             group.leave()
@@ -808,7 +815,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
             showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
         }
         
-        ref.child("starList").observeSingleEvent(of: .value, with: {
+        ref.child("starList").observeSingleEvent(of: .value, with: { [unowned self]
             snap in
             self.starList = snap.value as? [String]
             group.leave()
@@ -826,10 +833,10 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         for planetString in self.planetList
         {
             group.enter()
-            ref.child("planets").child(planetString).child("positions").child(dateString).observeSingleEvent(of: .value, with: {
+            ref.child("planets").child(planetString).child("positions").child(dateString).observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 let coordDict = snap.value as! [String: String]
-                self.ref.child("planets").child(planetString).child("values").observeSingleEvent(of: .value, with: {
+                self.ref.child("planets").child(planetString).child("values").observeSingleEvent(of: .value, with: { [unowned self]
                     snap2 in
                     
                     let valueDict = snap2.value as! [String: Any]
@@ -839,7 +846,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
                                         startingPlanet: valueDict["startingPlanet"] != nil,
                                             x: Int(Double(coordDict["x"]!)! * coordMultiplier * AU),
                                             y: Int(Double(coordDict["y"]!)! * coordMultiplier * AU),
-                                            color: valueDict["color"] != nil ? UIColor( valueDict["color"] as! String) : nil,
+                                            color: valueDict["color"] != nil ? UIColor( valueDict["color"] as! String) : .moonColor,
                                             type: valueDict["type"] as? String)
                     
                     self.planetDict[planet.name!] = planet
@@ -861,7 +868,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         for starString in self.starList
         {
             group.enter()
-            ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: {
+            ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 let dict = snap.value as! [String: Any]
                 let star = Planet(name: starString, radius: 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
@@ -960,7 +967,7 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     func getPositionFromServer(_ group: DispatchGroup!)
     {
 
-        ref.child("users/\(email!)/position").observeSingleEvent(of: .value, with: {
+        ref.child("users/\(email!)/position").observeSingleEvent(of: .value, with: { [unowned self]
             snap in
             
             if (snap.exists())
@@ -1142,29 +1149,31 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
     @objc func loadPlanetImages()
     {
         loadPlanetImagesTimer.invalidate()
-        DispatchQueue.global(qos: .userInitiated).async {
+        DispatchQueue.global(qos: .userInitiated).async { [unowned self] in
             for key in self.planetTexturesDict.keys
             {
-                let planet = self.planetDict[key]
-                if planet != nil
+                if let planet = self.planetDict[key]
                 {
-                    if self.camera!.xScale < CGFloat(planet!.radius * 2) && (self.camera?.contains(planet!))!
+                    if self.camera!.xScale < CGFloat(planet.radius * 2) && (self.camera?.contains(planet))!
                     {
-                        if planet?.fillTexture == nil
+                        if planet.fillTexture == nil
                         {
-                            if let image = UIImage(named: planet!.name!)
+                            if let image = UIImage(named: planet.name!)
                             {
-                                planet?.fillTexture = SKTexture.init(image: image)
-                                planet?.fillColor = .white
+                                planet.fillTexture = SKTexture.init(image: image)
+                                planet.fillColor = .white
+                                print("filled \(planet.name!) texture")
                             }
                         }
                     }
                     else
                     {
-                        if planet?.fillTexture != nil
+                        if planet.fillTexture != nil
                         {
-                            planet?.fillTexture = nil
-                            planet?.fillColor = planet?.color ?? UIColor.moonColor
+                            planet.fillTexture = nil
+                            planet.fillColor = planet.color
+                            print("reset \(planet.name!) texture")
+
                         }
                     }
                 }
@@ -1202,56 +1211,6 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         return planetDict.count
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let planet = self.planetArray[indexPath.row]
-        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
-        
-        if cell == nil {
-            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
-        }
-        
-        cell?.detailTextLabel?.numberOfLines = 5
-        cell!.textLabel?.text = planet.name
-        
-        if self.planetArray[indexPath.row] == currentPlanet
-        {
-            cell!.textLabel?.textColor = UIColor.gray
-            cell!.detailTextLabel?.text = "You are here"
-            cell!.detailTextLabel?.textColor = UIColor.gray
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
-        }
-        else if self.planetArray[indexPath.row] == travelingTo
-        {
-            cell!.textLabel?.textColor = UIColor.gray
-            cell!.detailTextLabel?.text = "You are already traveling here"
-            cell!.detailTextLabel?.textColor = UIColor.gray
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.none
-            cell!.detailTextLabel?.text?.append("\nDistance: \(String(describing: formatDistance(self.planetArray[indexPath.row].distance!)))")
-        }
-        else
-        {
-            cell!.textLabel?.textColor = UIColor.black
-            cell!.detailTextLabel?.textColor = UIColor.black
-            cell!.selectionStyle = UITableViewCell.SelectionStyle.default
-            cell!.detailTextLabel?.text = "Distance: \(String(describing: formatDistance(self.planetArray[indexPath.row].distance!)))"
-        }
-        
-        if (planet.type != nil)
-        {
-            cell?.detailTextLabel?.text?.append("\nType: \(planet.type!)")
-        }
-        //let visitorCount = planet.visitorDict != nil ? planet.visitorDict.count : 0
-        cell?.detailTextLabel?.text?.append("\nVisited by: \(planet.visitorCount)")
-        
-        if (traveledToDict[planet.name!] == true && planet != currentPlanet)
-        {
-            cell?.detailTextLabel?.text?.append("\nYou have been here")
-        }
-        
-        cell?.backgroundColor = planet.color != nil ? planet.color!.lighter() : planet.fillColor.lighter()
-        return cell!
-    }
-    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
@@ -1260,8 +1219,67 @@ class GameScene: SKScene, UITableViewDelegate, UITableViewDataSource {
         return UITableView.automaticDimension
     }
     
+    func createStarfield()
+    {
+        for key in starfieldDict.keys
+        {
+            let subDict = starfieldDict[key] as! [String: Double]
+            for i in 0...1 {
+                for j in 0...1 {
+                    let width : CGFloat = starFieldWidth
+                    let height : CGFloat = starFieldHeight
+                    let starfield = SKSpriteNode()
+                    starfield.texture = SKTexture(imageNamed: key)
+                    starfield.name = key
+                    starfield.zPosition = 0
+                    starfield.alpha = CGFloat(subDict["alpha"]!)
+                    starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+                    starfield.size = CGSize(width: width, height: height)
+                    starfield.position = CGPoint(x: width * CGFloat(i) - width / 2,
+                                                 y: height * CGFloat(j) - height / 2)
+                    starfield.alpha = 0
+                    self.addChild(starfield)
+                    setView(view: starfield, hide: false)
+                }
+            }
+        }
+    }
+    
+    func moveStarField(_ time: TimeInterval)
+    {
+        for key in starfieldDict.keys
+        {
+            let width : CGFloat = starFieldWidth
+            let height : CGFloat = starFieldHeight
+            let subDict = starfieldDict[key] as! [String: Double]
+            self.enumerateChildNodes(withName: key, using: ({
+                (node, error) in
+                node.position = CGPoint(x: node.position.x - CGFloat(sqrtPreserveSign(self.velocityX) / subDict["resistance"]! * time), y: node.position.y - CGFloat(sqrtPreserveSign(self.velocityY) / subDict["resistance"]! * time))
+                if node.position.x > width
+                {
+                    node.position.x = -width
+                }
+                else if node.position.x < -width
+                {
+                    node.position.x = width
+                }
+                
+                if node.position.y > height
+                {
+                    node.position.y = -height
+                }
+                else if node.position.y < -height
+                {
+                    node.position.y = height
+                }
+            }))
+        }
+    }
+    
 }
 
-
+enum constraintEnum: String {
+    case consoleWidth, consoleHeight, consoleBottom, consoleCenterX
+}
 
 
