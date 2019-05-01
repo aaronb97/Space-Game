@@ -11,11 +11,13 @@ import GameplayKit
 import Firebase
 import FirebaseDatabase
 import GoogleSignIn
+import UserNotifications
 
 
-class GameScene: SKScene {
+class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate {
     
     weak var ref: DatabaseReference!
+    let center = UNUserNotificationCenter.current()
 
     convenience init (size: CGSize, ref: DatabaseReference)
     {
@@ -27,9 +29,9 @@ class GameScene: SKScene {
         print("de inited")
     }
     
-    let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true]
+    let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true, "Uranus": true, "Neptune": true, "Saturn": true, "Jupiter": true]
     
-    var menuView: UIView!
+    var menuView: MenuView!
     
     var xPositionLabel: UILabel!
     var yPositionLabel: UILabel!
@@ -77,6 +79,7 @@ class GameScene: SKScene {
     var currentPlanetName: String!
     
     var planetDict = [String: Planet]()
+    var planetLabelDict = [String: PlanetLabel]()
     var planetArray = [Planet]()
     var planetList : [String]!
     var starList : [String]!
@@ -128,6 +131,7 @@ class GameScene: SKScene {
     var calcVelocityTimer: Timer!
     var loadDateTimer: Timer!
     var loadPlanetImagesTimer: Timer!
+    var updatePlanetLabelsTimer: Timer!
     
     var localTime: TimeInterval!
     
@@ -153,10 +157,26 @@ class GameScene: SKScene {
     
     func setSpeedLabel()
     {
-        consoleView.speedLabel.text = "Speed: \(formatDistance(Double(velocity)))/hour"
+        consoleView.speedLabel.text = "Speed: \(formatSpeed(Double(velocity)))"
     }
     
+    func gestureRecognizer(_: UIGestureRecognizer,
+                                    shouldRecognizeSimultaneouslyWith shouldRecognizeSimultaneouslyWithGestureRecognizer:UIGestureRecognizer) -> Bool {
+        return true
+    }
+    
+    
+    
     override func didMove(to view: SKView) {
+        
+        let options: UNAuthorizationOptions = [.alert, .sound]
+        center.requestAuthorization(options: options) { (granted, error) in
+            if !granted {
+                print("Something went wrong")
+            }
+        }
+
+        
         appDelegate = UIApplication.shared.delegate as? AppDelegate
 
         menuView = MenuView(frame: self.frame, gamescene: self)
@@ -183,7 +203,13 @@ class GameScene: SKScene {
         view.window!.addConstraints([consoleCenterXConstraint, consoleBottomConstraint, consoleWidthConstraint, consoleHeightConstraint])
         
         let pinch = UIPinchGestureRecognizer(target: self, action:#selector(self.pinchRecognized(sender:)))
+        pinch.delegate = self
+        let rotate = UIRotationGestureRecognizer(target: self, action: #selector(self.rotationRecognized(sender:)))
+        rotate.delegate = self
         self.view?.addGestureRecognizer(pinch)
+        self.view?.addGestureRecognizer(rotate)
+        
+        
         
         //ref = Database.database().reference()
         email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
@@ -196,7 +222,7 @@ class GameScene: SKScene {
                 }
                 else
                 {
-                    self.loadEverything()
+                    self.hardLoad()
                 }
         })
         
@@ -225,7 +251,7 @@ class GameScene: SKScene {
         cancelButton.isHidden = true
         cancelButton.setTitle("Cancel", for: .normal)
         
-        versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String) (build \(Bundle.main.infoDictionary!["CFBundleVersion"] as! String))"
+        versionLabel.text = "v\(Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String) (\(Bundle.main.infoDictionary!["CFBundleVersion"] as! String))"
         versionLabel.frame = CGRect(x: 20.0, y: (self.view?.frame.maxY)! - 25, width: 300, height: 30)
         versionLabel.font = UIFont(name: versionLabel.font.fontName, size: 10)
         
@@ -293,8 +319,8 @@ class GameScene: SKScene {
         button.setTitleColor(UIColor.white, for: .normal)
         button.tintColor = UIColor.black
         button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
-        button.backgroundColor = UIColor("000000").withAlphaComponent(0.8)
-        button.setBackgroundColor(color: UIColor("111111").withAlphaComponent(1.0), forState: UIControl.State.highlighted)
+        button.backgroundColor = UIColor("000000").withAlphaComponent(0.5)
+        button.setBackgroundColor(color: UIColor("111111").withAlphaComponent(1.0), forState: UIControl.State.selected)
         button.layer.cornerRadius = 12
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.white.cgColor
@@ -336,8 +362,8 @@ class GameScene: SKScene {
             currentPlanet = nil
 
             calculateVelocities()
-            pushNextSpeedBoostTime()
-            pushWillLandOnPlanetTime()
+            
+            setTimes()
             
             formatConsole(setACourseView: false)
             
@@ -368,6 +394,7 @@ class GameScene: SKScene {
     
     func prepareSignOut()
     {
+        center.removeAllPendingNotificationRequests()
         for planet in planetDict.values
         {
             planet.fillTexture = nil
@@ -385,6 +412,11 @@ class GameScene: SKScene {
         setView(view: setACourseButton, hide: false)
         setView(view: consoleView, hide: false)
         setView(view: menuButton, hide: false)
+        
+        for view in menuView.flagScrollView.subviews
+        {
+            view.removeFromSuperview()
+        }
     }
     
     func pushNextSpeedBoostTime()
@@ -401,20 +433,7 @@ class GameScene: SKScene {
         }
     }
     
-    func pushWillLandOnPlanetTime()
-    {
-        let group = DispatchGroup()
-        group.enter()
-        loadDate(group)
-        
-        group.notify(queue: .main) {
-            guard let planet = self.travelingTo else { return }
-            planet.calculateDistance(x: self.positionX, y: self.positionY)
-            self.willLandOnPlanetTime = self.timestamp + Int(self.travelingTo.distance / Double(self.velocity) * 3600000.0)
-            self.pushPositionToServer()
-        }
-    }
-    
+
     @objc func calculateVelocities()
     {
         if let planet = travelingTo
@@ -435,6 +454,8 @@ class GameScene: SKScene {
         if distance(x1: rocket.position.x, x2: planet.position.x, y1: rocket.position.y, y2: planet.position.y) < radius //touch down on a planet
         {
 
+            center.removeAllPendingNotificationRequests()
+            
             currentPlanet = planet
             travelingTo = nil
             checkFlags()
@@ -466,17 +487,18 @@ class GameScene: SKScene {
                 if !snapshot.exists()
                 {
                     count = 1
-                    self.flagsDict[flagName] = ["number": 1]
+                    self.flagsDict[flagName] = ["number": 1, "timestamp": self.timestamp]
                     self.ref.child("flags/\(flagName)/count").setValue(2)
                 }
                 else
                 {
                     count = snapshot.value as! Int
-                    self.flagsDict[flagName] = ["number": count]
+                    self.flagsDict[flagName] = ["number": count, "timestamp": self.timestamp]
                     self.ref.child("flags/\(flagName)/count").setValue(count + 1)
                 }
                 
                 self.pushFlagsDict()
+                self.loadDate(nil)
                 self.consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: ".")) #\(count)'!")
             })
             
@@ -491,11 +513,9 @@ class GameScene: SKScene {
     
     func addVisitorToPlanet(_ name: String)
     {
-        //guard let planet = planetDict[name] else { NSLog("planet to add visitor to not found"); return}
-        
+
         if traveledToDict[name] != true
         {
-            //planet.visitorDict[self.username] = true
             traveledToDict[name] = true
             self.ref.child("planets/\(name)/values/visitors/\(self.username!)").setValue(true)
             NSLog("added visitor \(username!) to \(name)")
@@ -512,11 +532,29 @@ class GameScene: SKScene {
             setView(view: goButton, hide: true)
             goButton.setTitle("Go to \(planetArray[indexPath.row].name!)", for: .normal)
             
-            
-            //self.goButton.frame.size.width = textWidth(text: self.goButton.titleLabel!.text!, font: self.goButton.titleLabel?.font)
             setView(view: goButton, hide: false)
-
+        }
+    }
+    
+    var rotationOffset : CGFloat = 0.0
+    
+    @objc func rotationRecognized(sender: UIRotationGestureRecognizer)
+    {
+        if sender.state == .changed {
+            let rotation = sender.rotation + rotationOffset
+            camera?.zRotation = rotation
             
+            for planetLabel in planetLabelDict.values
+            {
+                planetLabel.zRotation = rotation
+            }
+            
+            movePlanetLabels()
+        }
+        
+        if sender.state == .began
+        {
+            rotationOffset = camera!.zRotation - sender.rotation
         }
     }
     
@@ -540,6 +578,15 @@ class GameScene: SKScene {
                 self.camera!.setScale(newScale)
             }
             
+            if camera!.xScale > CGFloat(30.0) {
+                rocket.size = CGSize(width: camera!.xScale * 20 / 4, height: camera!.yScale * 40 / 4)
+                rocket.alpha = 0.5
+            }
+            else {
+                rocket.size = CGSize(width: 20.0, height: 40.0)
+                rocket.alpha = 1.0
+            }
+            
             for planet in planetDict.values
             {
                 if (camera!.xScale > CGFloat(0.1))
@@ -552,6 +599,19 @@ class GameScene: SKScene {
                 }
                 planet.glowWidth = newScale
             }
+            
+            for planetLabel in planetLabelDict.values
+            {
+                planetLabel.xScale = newScale
+                planetLabel.yScale = newScale
+                
+                
+            }
+            
+            movePlanetLabels()
+            
+            
+            
             if camera!.xScale > CGFloat(1.5)
             {
                 for key in starfieldDict.keys
@@ -581,7 +641,79 @@ class GameScene: SKScene {
         }
     }
     
-    func loadEverything()
+    @objc func updatePlanetLabels()
+    {
+        updatePlanetLabelsTimer.invalidate()
+        BG {
+            var tempLabelNodeArray = [PlanetLabel]()
+            for node in (self.camera?.containedNodeSet())!
+            {
+                if node is PlanetLabel
+                {
+                    tempLabelNodeArray.append(node as! PlanetLabel)
+                }
+            }
+            
+            tempLabelNodeArray.sort(by: {
+                if $0.planet == self.travelingTo || $0.planet == self.currentPlanet
+                {
+                    return false
+                }
+                else if $1.planet == self.travelingTo || $1.planet == self.currentPlanet
+                {
+                    return true
+                }
+                return $0.planet.radius < $1.planet.radius
+            })
+            
+            if tempLabelNodeArray.count > 1
+            {
+                
+                for i in stride(from: tempLabelNodeArray.count - 1, to: 0, by: -1)
+                {
+                    let label1 = tempLabelNodeArray[i]
+                    if label1.willBeHidden == false
+                    {
+                        for j in stride(from: i - 1, to: -1, by: -1)
+                        {
+                            let label2 = tempLabelNodeArray[j]
+                            if label1.intersects(label2)
+                            {
+                                label2.willBeHidden = true
+                                
+                            }
+                        }
+                    }
+                }
+                
+                for i in 0 ..< tempLabelNodeArray.count
+                {
+                    let label = tempLabelNodeArray[i]
+                    
+                    if label.alpha == 1.0 && label.willBeHidden == true
+                    {
+                        UI {
+                            setView(view: label, hide: true, setStartAlpha: false)
+                        }
+                    }
+                    else if label.alpha == 0.0 && label.willBeHidden == false
+                    {
+                        UI {
+                            setView(view: label, hide: false, setStartAlpha: false)
+                        }
+                    }
+                    label.willBeHidden = false
+                    
+                }
+            }
+            
+            UI {
+                self.startUpdatePlanetLabelsTimer()
+            }
+        }
+    }
+    
+    func hardLoad()
     {
         makeStartElementsInvisible()
         let group2 = DispatchGroup()
@@ -616,10 +748,13 @@ class GameScene: SKScene {
                     self.startCalculateVelocityTimer()
                     self.startLoadDateTimer()
                     self.startLoadPlanetImagesTimer()
+                    self.startUpdatePlanetLabelsTimer()
                     self.setSpeedLabel()
                     self.setSpeedBoostTimeLabel()
                     self.setTimeToPlanetLabel()
                     self.createStarfield()
+                    self.camera?.xScale = 1
+                    self.camera?.yScale = 1
                     self.makeStartElementsVisible()
                 })
             }
@@ -707,9 +842,27 @@ class GameScene: SKScene {
                 }
                 else if let tempFlagsDict = dict["flags"] as? [String: Any]
                 {
+                    
                     self.flagsDict = tempFlagsDict
+                    
+                    
                 }
-                //self.flagsDict = dict["flags"] as? [String: Bool] ?? [String: Bool]()
+                
+                for key in self.flagsDict.keys
+                {
+                    if key.contains("v0,1")
+                    {
+                        self.flagsDict["Antique \(key.replacingOccurrences(of: "(v0,1 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = self.flagsDict[key]
+                        
+                        self.flagsDict[key] = nil
+                    }
+                    else if key.contains("v0,2")
+                    {
+                        self.flagsDict["Vintage \(key.replacingOccurrences(of: "(v0,2 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = self.flagsDict[key]
+                        
+                        self.flagsDict[key] = nil
+                    }
+                }
             }
             group.leave()
             NSLog("got user data for \(self.email ?? "nil")")
@@ -718,7 +871,6 @@ class GameScene: SKScene {
             showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
         }
     }
-    
     
     func nicknameSetup()
     {
@@ -734,7 +886,7 @@ class GameScene: SKScene {
                 self.username = nickname
                 self.ref.child("nicknames/\(nickname)").setValue(true)
                 self.ref.child("users/\(self.email!)/data/nickname").setValue(nickname)
-                self.loadEverything()
+                self.hardLoad()
             }
             
         }) { (error) in
@@ -750,6 +902,11 @@ class GameScene: SKScene {
     func startPushTimer()
     {
         pushTimer = Timer.scheduledTimer(timeInterval: 30.0, target: self, selector: #selector(pushPositionToServer), userInfo: nil, repeats: true)
+    }
+    
+    func startUpdatePlanetLabelsTimer()
+    {
+        updatePlanetLabelsTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(updatePlanetLabels), userInfo: nil, repeats: false)
     }
     
     func startCalculateVelocityTimer()
@@ -774,16 +931,13 @@ class GameScene: SKScene {
     
     func loadDate(_ group: DispatchGroup! )
     {
-        var date : NSDate!
-        
         ref.child("timestamp").setValue(ServerValue.timestamp(), withCompletionBlock: { (error, snapshot) in
             self.ref.child("timestamp").observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 if let t = snap.value as? TimeInterval {
                     
                     self.timestamp = snap.value as? Int
-                    date = NSDate(timeIntervalSince1970: t/1000)
-                    
+                    let date = NSDate(timeIntervalSince1970: t/1000)
                     let dateFormatter = DateFormatter()
                     dateFormatter.dateFormat = "yyyy-M-dd"
                     self.dateString = dateFormatter.string(from: date as Date)
@@ -871,9 +1025,10 @@ class GameScene: SKScene {
             ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 let dict = snap.value as! [String: Any]
-                let star = Planet(name: starString, radius: 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
+                let star = Planet(name: starString, radius: dict["radius"] as? Double ?? 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
                                                                                            y: Int(dict["y"] as! Double * coordMultiplier * parsec),
-                                                                                           color: .yellow, type: "Star")
+                                                                                           color: dict["color"] != nil ? UIColor(dict["color"] as! String) : .yellow,
+                                                                                           type: dict["type"] as? String ?? "Star")
                 let visitorDict = dict["visitors"] as? [String: Bool] ?? [String:Bool]()
                 star.visitorCount = visitorDict.count
                 self.planetDict[starString] = star
@@ -896,21 +1051,20 @@ class GameScene: SKScene {
         for planet in planetDict.values
         {
             //planet.isHidden = true
-            planet.zPosition = 1
-            if (planet.startingPlanet == true) //process the starting planet first
+            planet.zPosition = CGFloat(-1 / planet.radius)
+            if planet.startingPlanet == true //process the starting planet first
             {
                 
-                    rocket = SKSpriteNode(imageNamed: "rocket.png")
-                    rocket.size = CGSize(width: 20, height: 40)
-                    rocket.zPosition = 2
-                
+                rocket = SKSpriteNode(imageNamed: "rocket.png")
+                rocket.size = CGSize(width: 20, height: 40)
+                rocket.zPosition = 2
 
                 self.addChild(rocket)
                 camera!.position = CGPoint(x: 0, y: 0)
                 rocket.position = camera!.position
                 self.addChild(planet)
                 
-                if (!coordinatesSet)
+                if !coordinatesSet
                 {
                     NSLog("coordinates not set")
                     coordinatesSet = true
@@ -932,12 +1086,19 @@ class GameScene: SKScene {
         
         for planet in planetDict.values
         {
-            planet.zPosition = 1
-            if (planet.startingPlanet == false)
+            if planet.startingPlanet == false
             {
                 planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
                 self.addChild(planet)
             }
+            
+            let planetLabel = PlanetLabel(planet: planet)
+            planetLabel.position = CGPoint(x: planet.position.x, y: planet.position.y + CGFloat(planet.radius!) + 10.0)
+            planetLabel.fontSize = 12
+            self.addChild(planetLabel)
+            planetLabelDict[planet.name!] = planetLabel
+            physicsWorld.contactDelegate = self
+            
         }
     }
     
@@ -950,6 +1111,11 @@ class GameScene: SKScene {
         let travelingToName = travelingTo != nil ? travelingTo.name : "nil"
         let currentPlanetName = currentPlanet != nil ? currentPlanet.name : "nil"
         //let path = "users/\(email!)/position"
+        
+        if positionX == nil
+        {
+            return
+        }
         
         ref.child("users/\(email!)/position").setValue(
             ["positionX" : positionX!,
@@ -1014,15 +1180,14 @@ class GameScene: SKScene {
             travelingTo = nil
             moveRocketToCurrentPlanet()
         }
-        else if (self.timestamp > self.nextSpeedBoostTime)
+        else if (self.timestamp > self.nextSpeedBoostTime && travelingTo != nil)
         {
             nextSpeedBoostTime = Int.max
             consoleView.setNotification("Your speed has doubled!")
             NSLog("speed boosted")
             velocity *= 2
-            pushNextSpeedBoostTime()
-            setTimeToPlanetLabel()
-            pushWillLandOnPlanetTime()
+            
+            setTimes()
             calculateVelocities()
         }
         else
@@ -1030,6 +1195,56 @@ class GameScene: SKScene {
             NSLog("speed not boosted, need to wait \(self.nextSpeedBoostTime - self.timestamp) milliseconds")
             self.setSpeedBoostTimeLabel()
             self.setTimeToPlanetLabel()
+        }
+    }
+    
+    func setTimes()
+    {
+        center.removeAllPendingNotificationRequests()
+        
+        let group = DispatchGroup()
+        group.enter()
+        loadDate(group)
+        
+        group.notify(queue: .main) {
+            guard let planet = self.travelingTo else { return }
+            planet.calculateDistance(x: self.positionX, y: self.positionY)
+            self.willLandOnPlanetTime = self.timestamp + Int(self.travelingTo.distance / Double(self.velocity) * 3600000.0)
+
+            self.nextSpeedBoostTime = self.timestamp + 43200000
+            self.setSpeedBoostTimeLabel()
+            self.setTimeToPlanetLabel()
+            NSLog("next speed boost time set: \(self.nextSpeedBoostTime)")
+            self.pushPositionToServer()
+            
+            if (self.willLandOnPlanetTime > self.nextSpeedBoostTime)
+            {
+                let speedBoostContent = UNMutableNotificationContent()
+                speedBoostContent.title = "You have an available speed boost!"
+                speedBoostContent.body = ""
+                speedBoostContent.sound = UNNotificationSound.default
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: Double((self.nextSpeedBoostTime - self.timestamp) / 1000), repeats: false)
+                let request = UNNotificationRequest(identifier: "Speed Boost", content: speedBoostContent, trigger: trigger)
+                
+                self.center.add(request, withCompletionHandler: { (error) in
+                    if let error = error {
+                        print(error.localizedDescription)
+                    }
+                })
+            }
+            let willLandContent = UNMutableNotificationContent()
+            willLandContent.title = "You have landed on \(self.travelingTo.name!)"
+            willLandContent.body = ""
+            willLandContent.sound = UNNotificationSound.default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: Double((self.willLandOnPlanetTime - self.timestamp) / 1000), repeats: false)
+            let request = UNNotificationRequest(identifier: "Landed", content: willLandContent, trigger: trigger)
+            
+            self.center.add(request, withCompletionHandler: { (error) in
+                if let error = error {
+                    print(error.localizedDescription)
+                }
+            })
+
         }
     }
     
@@ -1066,6 +1281,7 @@ class GameScene: SKScene {
     
     func moveRocketToCurrentPlanet()
     {
+        center.removeAllPendingNotificationRequests()
         NSLog("moving rocket to \(currentPlanet.name!)")
         if velocityX != 0
         {
@@ -1101,6 +1317,25 @@ class GameScene: SKScene {
         {
             planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier, y: Double(planet.y - positionY!) / coordMultiplier)
         }
+        movePlanetLabels()
+
+    }
+    
+    func movePlanetLabels()
+    {
+        for planetLabel in planetLabelDict.values
+        {
+            if let planet = planetLabel.planet
+            {
+                if let rot = camera?.zRotation
+                {
+                    let xRot = cos(rot + .pi / 2)
+                    let yRot = sin(rot + .pi / 2)
+                    planetLabel.position = CGPoint(x: planet.position.x + xRot * (CGFloat(planet.radius) + 5 * camera!.xScale),
+                                                   y: planet.position.y + yRot * (CGFloat(planet.radius) + 5 * camera!.xScale))
+                }
+            }
+        }
     }
     
     func calcSpeed() -> Double
@@ -1124,13 +1359,19 @@ class GameScene: SKScene {
                 }
                 else if planet.type == "Irregular Moon"
                 {
-                    
                     speedSum += 2500
+                }
+                else if planet.type == "Star" && planet.name == "The Sun"
+                {
+                    speedSum += 15000
                 }
                 else if planet.type == "Star"
                 {
-                    
-                    speedSum += 15000
+                    speedSum += 100000
+                }
+                else if planet.type == "Red Dwarf Star"
+                {
+                    speedSum += 70000
                 }
                 else if planet.type == "Asteroid"
                 {
@@ -1158,7 +1399,7 @@ class GameScene: SKScene {
                     {
                         if planet.fillTexture == nil
                         {
-                            if let image = UIImage(named: planet.name!)
+                            if let image = UIImage(named: "\(planet.name!)")
                             {
                                 planet.fillTexture = SKTexture.init(image: image)
                                 planet.fillColor = .white
@@ -1195,11 +1436,7 @@ class GameScene: SKScene {
             positionX += Int(velocityX / secondsPerHour * timeDiff)
             positionY += Int(velocityY / secondsPerHour * timeDiff)
             
-            for planet in planetDict.values
-            {
-                planet.position = CGPoint(x: Double(planet.x - positionX!) / coordMultiplier,
-                                          y: Double(planet.y - positionY!) / coordMultiplier)
-            }
+            movePlanets()
             
             moveStarField(timeDiff)
             checkTouchDown()
@@ -1231,7 +1468,7 @@ class GameScene: SKScene {
                     let starfield = SKSpriteNode()
                     starfield.texture = SKTexture(imageNamed: key)
                     starfield.name = key
-                    starfield.zPosition = 0
+                    starfield.zPosition = -2
                     starfield.alpha = CGFloat(subDict["alpha"]!)
                     starfield.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                     starfield.size = CGSize(width: width, height: height)

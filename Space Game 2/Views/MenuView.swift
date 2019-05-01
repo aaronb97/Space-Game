@@ -9,12 +9,13 @@
 import Foundation
 import UIKit
 
-class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
+class MenuView : UIView{
     
     let signOutButton = UIButton()
     let flagsButton = UIButton()
     let backButton = UIButton()
-    let flagTableView = UITableView()
+    let flagScrollView = UIScrollView()
+    //let flagTableView = UITableView()
     weak var gameScene: GameScene!
     var flagNames = [String]()
     
@@ -23,6 +24,7 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         
         addSubview(signOutButton)
         formatButton(signOutButton)
+        signOutButton.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
         signOutButton.setTitle("Sign Out", for: .normal)
         signOutButton.translatesAutoresizingMaskIntoConstraints = false
         signOutButton.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
@@ -32,6 +34,7 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         
         addSubview(flagsButton)
         formatButton(flagsButton)
+        flagsButton.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
         flagsButton.setTitle("Flags", for: .normal)
         flagsButton.translatesAutoresizingMaskIntoConstraints = false
         flagsButton.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
@@ -48,15 +51,16 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         backButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
-        addSubview(flagTableView)
-        flagTableView.isHidden = true
-        flagTableView.translatesAutoresizingMaskIntoConstraints = false
-        flagTableView.leftAnchor.constraint(equalTo: self.safeLeftAnchor).isActive = true
-        flagTableView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 10).isActive = true
-        flagTableView.rightAnchor.constraint(equalTo: self.safeRightAnchor).isActive = true
-        flagTableView.bottomAnchor.constraint(equalTo: self.safeBottomAnchor).isActive = true
-        flagTableView.delegate = self
-        flagTableView.dataSource = self
+        addSubview(flagScrollView)
+        flagScrollView.isHidden = true
+        flagScrollView.translatesAutoresizingMaskIntoConstraints = false
+        flagScrollView.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
+        flagScrollView.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 15).isActive = true
+        flagScrollView.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        flagScrollView.bottomAnchor.constraint(equalTo: self.safeBottomAnchor, constant: -5).isActive = true
+        
+        
+
         
         self.backgroundColor = UIColor.black.withAlphaComponent(0.8)
     }
@@ -66,6 +70,8 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         self.init(frame: frame)
         self.gameScene = gamescene
         self.flagNames = Array(gamescene.flagsDict.keys)
+        print(gamescene.flagsDict)
+        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -76,7 +82,6 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
     {
         button.setTitleColor(UIColor.white, for: .normal)
         button.tintColor = UIColor.black
-        button.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
         button.backgroundColor = UIColor("000000").withAlphaComponent(0.8)
         button.setBackgroundColor(color: UIColor("111111").withAlphaComponent(1.0), forState: UIControl.State.highlighted)
         button.layer.cornerRadius = 12
@@ -92,40 +97,70 @@ class MenuView : UIView, UITableViewDelegate, UITableViewDataSource {
         }
         else if button == backButton
         {
-            if flagTableView.isHidden == false
+            if flagScrollView.isHidden == false
             {
-                setView(view: flagTableView, hide: true)
+                setView(view: flagScrollView, hide: true)
                 setView(view: flagsButton, hide: false)
+                setView(view: signOutButton, hide: false)
             }
             else
             {
                 gameScene.hideMenu()
+                
             }
         }
         else if button == flagsButton
         {
-            setView(view: flagsButton, hide: true)
+            for view in flagScrollView.subviews
+            {
+                view.removeFromSuperview()
+            }
             flagNames = Array(gameScene.flagsDict.keys)
-            flagTableView.reloadData()
-            setView(view: flagTableView, hide: false)
+            
+            flagNames.sort(by: {
+                let timestamp0 = (gameScene.flagsDict[$0] as! [String: Any])["timestamp"] as? Int ?? 0
+                let timestamp1 = (gameScene.flagsDict[$1] as! [String: Any])["timestamp"] as? Int ?? 0
+                return timestamp0 < timestamp1
+            })
+            
+            let verticalSpacing : CGFloat = 120
+            setView(view: flagsButton, hide: true)
+            setView(view: signOutButton, hide: true)
+            
+            let imageWidth : CGFloat = 190
+            let imageHeight : CGFloat = 100
+            let scrollViewContentSizeWidth : CGFloat = 300
+            
+            flagScrollView.contentSize = CGSize(width: Int(scrollViewContentSizeWidth), height: gameScene.flagsDict.keys.count * Int(verticalSpacing))
+            
+            
+            for i in 0 ..< flagNames.count
+            {
+                let flagName = flagNames[i]
+                let flagDict = gameScene.flagsDict[flagName] as! [String: Any]
+                let flagNumber = flagDict["number"] as? Int ?? 0
+                print("adding flag \(flagNames[i])")
+                
+                let image = UIImage(named: flagName) != nil ? UIImage(named: flagName) : UIImage(named: "FlagNotFound")
+                
+                let imageView = UIImageView(frame: CGRect(x: 0.0, y: CGFloat(i) * verticalSpacing, width: imageWidth, height: imageHeight))
+                imageView.image = image
+                flagScrollView.addSubview(imageView)
+
+                let flagLabel = UILabel(frame: CGRect(x: imageWidth + 5, y: CGFloat(i) * verticalSpacing, width: scrollViewContentSizeWidth - (imageWidth + 10), height: 100.0))
+                flagLabel.font = UIFont(name: "Courier", size: 16)
+                flagLabel.numberOfLines = 5
+                flagLabel.text = flagName.replacingOccurrences(of: ",", with: ".")
+                if flagNumber > 0
+                {
+                    flagLabel.text!.append(" #\(flagNumber)")
+                }
+                
+                flagLabel.textColor = .white
+                flagScrollView.addSubview(flagLabel)
+            }
+            setView(view: flagScrollView, hide: false)
         }
     }
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
-        return flagNames.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        var cell = tableView.dequeueReusableCell(withIdentifier: "cell")
-        
-        if cell == nil {
-            cell = UITableViewCell(style: UITableViewCell.CellStyle.subtitle, reuseIdentifier: "cell")
-        }
-        
-        let flagNumber = (gameScene.flagsDict[flagNames[indexPath.row]] as! [String: Any])["number"] as! Int
-        let flagNumberText = flagNumber > 0 ? "#\(flagNumber)" : ""
-        cell?.textLabel?.text = "\(flagNames[indexPath.row].replacingOccurrences(of: ",", with: ".")) \(flagNumberText)"
-        return cell!
-    }
+
 }

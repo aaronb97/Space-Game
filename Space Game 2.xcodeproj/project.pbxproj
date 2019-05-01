@@ -17,12 +17,12 @@
 		4E29470B225FA5AD00CF996B /* MenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E29470A225FA5AD00CF996B /* MenuView.swift */; };
 		4E81B4DE224FC7EA0010FA9C /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E81B4DD224FC7EA0010FA9C /* Utility.swift */; };
 		4E936C4822625F57003AD355 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4E936C4722625F56003AD355 /* GoogleService-Info.plist */; };
+		4EA19CBC2266629100A575B7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EA19CBB2266629100A575B7 /* Assets.xcassets */; };
 		4ECFDEE522447B2E002457BC /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEE422447B2E002457BC /* AppDelegate.swift */; };
 		4ECFDEEB22447B2E002457BC /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEA22447B2E002457BC /* GameScene.swift */; };
 		4ECFDEED22447B2E002457BC /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEC22447B2E002457BC /* GameViewController.swift */; };
 		4ECFDEF022447B2E002457BC /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEEE22447B2E002457BC /* Main.storyboard */; };
 		4ECFDEF522447B31002457BC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4ECFDEF322447B31002457BC /* LaunchScreen.storyboard */; };
-		4EDEF5A6225924DE00462DCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4EDEF5A5225924DE00462DCD /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +36,7 @@
 		4E29470A225FA5AD00CF996B /* MenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuView.swift; sourceTree = "<group>"; };
 		4E81B4DD224FC7EA0010FA9C /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		4E936C4722625F56003AD355 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		4EA19CBB2266629100A575B7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4ECFDEE122447B2E002457BC /* Space Game 2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Space Game 2.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ECFDEE422447B2E002457BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4ECFDEEA22447B2E002457BC /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
@@ -43,7 +44,6 @@
 		4ECFDEEF22447B2E002457BC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		4ECFDEF422447B31002457BC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		4ECFDEF622447B31002457BC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		4EDEF5A5225924DE00462DCD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		E68F82533FA6DF165739AF12 /* Pods_Space_Game_2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Space_Game_2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		FC3B3C678C6FFE31225338A8 /* Pods-Space Game 2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Space Game 2.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Space Game 2/Pods-Space Game 2.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -136,7 +136,7 @@
 				4E81B4D8224FC75D0010FA9C /* View Controllers */,
 				4ECFDEF622447B31002457BC /* Info.plist */,
 				4E936C4722625F56003AD355 /* GoogleService-Info.plist */,
-				4EDEF5A5225924DE00462DCD /* Assets.xcassets */,
+				4EA19CBB2266629100A575B7 /* Assets.xcassets */,
 			);
 			path = "Space Game 2";
 			sourceTree = "<group>";
@@ -222,8 +222,8 @@
 			files = (
 				4E936C4822625F57003AD355 /* GoogleService-Info.plist in Resources */,
 				4ECFDEF022447B2E002457BC /* Main.storyboard in Resources */,
+				4EA19CBC2266629100A575B7 /* Assets.xcassets in Resources */,
 				4ECFDEF522447B31002457BC /* LaunchScreen.storyboard in Resources */,
-				4EDEF5A6225924DE00462DCD /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -471,7 +471,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = SZ3Q2Y73R2;
 				INFOPLIST_FILE = "Space Game 2/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -492,7 +492,7 @@
 				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = SZ3Q2Y73R2;
 				INFOPLIST_FILE = "Space Game 2/Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

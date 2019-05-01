@@ -189,11 +189,16 @@ class ConsoleView: UIView, UIPickerViewDelegate, UIPickerViewDataSource{
     func selectPlanet(_ planet: Planet, row: Int)
     {
         setView(view: infoLabel, hide: true)
-        infoLabel.text = "Selected: \(planet.name!)"
+        infoLabel.text = ""
         infoLabel.text?.append("\nDistance: \(formatDistance(planet.distance))")
         if let type = planet.type
         {
             infoLabel.text?.append("\nType: \(type)")
+        }
+        
+        if let radius = planet.radius
+        {
+            infoLabel.text?.append("\nRadius: \(formatDistance(radius))")
         }
     
         if gameScene.currentPlanet == planet

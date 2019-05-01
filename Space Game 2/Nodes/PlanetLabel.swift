@@ -12,6 +12,7 @@ import SpriteKit
 class PlanetLabel : SKLabelNode {
     
     weak var planet: Planet!
+    var willBeHidden = false
     
     init(planet: Planet)
     {
@@ -19,6 +20,7 @@ class PlanetLabel : SKLabelNode {
         self.planet = planet
         self.text = planet.name
         self.color = .white
+        self.fontName = "Courier"
     }
     
     required init?(coder aDecoder: NSCoder) {

@@ -105,10 +105,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     
     func invalidateSceneTimers()
     {
-        scene.pushTimer.invalidate()
-        scene.loadDateTimer.invalidate()
-        scene.calcVelocityTimer.invalidate()
-        scene.loadPlanetImagesTimer.invalidate()
+        scene.pushTimer?.invalidate()
+        scene.loadDateTimer?.invalidate()
+        scene.calcVelocityTimer?.invalidate()
+        scene.loadPlanetImagesTimer?.invalidate()
+        scene.updatePlanetLabelsTimer?.invalidate()
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
@@ -139,7 +140,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     func applicationDidBecomeActive(_ application: UIApplication) {
         if scene != nil {
 
-            scene.loadEverything()
+            scene.hardLoad()
             scene.localTime = Date().timeIntervalSinceReferenceDate
         }
         

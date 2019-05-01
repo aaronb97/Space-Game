@@ -96,6 +96,28 @@ func setView(view: UIView, hide: Bool, option: UIView.AnimationOptions! = UIView
             return "\(numberFormatter.string(from: NSNumber(value: Int(number)))!) km"
         }
     }
+
+    func formatSpeed(_ number: Double) -> String
+    {
+    if number >= 1.079e8
+    {
+        return String(format: "%1.1f times light speed", number / 1.079e9)
+    }
+    if number >= 1000000000
+    {
+        return String(format: "%1.1f billion km / hour", number / 1000000000)
+    }
+    else if number >= 1000000
+    {
+        return String(format: "%1.1f million km / hour", number / 1000000)
+    }
+    else
+    {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        return "\(numberFormatter.string(from: NSNumber(value: Int(number)))!) km"
+    }
+}
     
     
      func formatTime(_ seconds: Int) -> String
@@ -154,4 +176,11 @@ func setView(view: UIView, hide: Bool, option: UIView.AnimationOptions! = UIView
         return x > 0 ? sqrt(posX) : sqrt(posX) * -1
     }
 
+    func BG(_ block: @escaping ()->Void) {
+        DispatchQueue.global(qos: .default).async(execute: block)
+    }
+
+    func UI(_ block: @escaping ()->Void) {
+        DispatchQueue.main.async(execute: block)
+    }
 
