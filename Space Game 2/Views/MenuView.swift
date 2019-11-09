@@ -146,6 +146,16 @@ class MenuView : UIView{
                 let imageView = UIImageView(frame: CGRect(x: 0.0, y: CGFloat(i) * verticalSpacing, width: imageWidth, height: imageHeight))
                 imageView.image = image
                 flagScrollView.addSubview(imageView)
+                
+                if flagNumber <= 3 {
+                    let flagNumberDict = [1: "border", 2: "silver border", 3: "bronze border"]
+                    
+                    if let borderImage = UIImage(named: flagNumberDict[flagNumber] ?? "") {
+                        let imageView = UIImageView(frame: CGRect(x: 0.0, y: CGFloat(i) * verticalSpacing, width: imageWidth, height: imageHeight))
+                        imageView.image = borderImage
+                        flagScrollView.addSubview(imageView)
+                    }
+                }
 
                 let flagLabel = UILabel(frame: CGRect(x: imageWidth + 5, y: CGFloat(i) * verticalSpacing, width: scrollViewContentSizeWidth - (imageWidth + 10), height: 100.0))
                 flagLabel.font = UIFont(name: "Courier", size: 16)

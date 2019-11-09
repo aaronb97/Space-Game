@@ -95,7 +95,6 @@ class ConsoleView: UIView, UIPickerViewDelegate, UIPickerViewDataSource{
     }
     
     public override func draw(_ frame: CGRect) {
-
         let color:UIColor = .white
         let drect = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: frame.height)
         let bpath:UIBezierPath = UIBezierPath(rect: drect)
@@ -221,7 +220,7 @@ class ConsoleView: UIView, UIPickerViewDelegate, UIPickerViewDataSource{
         {
             gameScene.planetSelection = planet
             setView(view: gameScene.goButton, hide: true)
-            gameScene.goButton.setTitle("Go to \(planet.name!)", for: .normal)
+            gameScene.goButton.setTitle("\(gameScene.goToOrDestroy) \(planet.name!)", for: .normal)
             setView(view: gameScene.goButton, hide: false)
         }
         else

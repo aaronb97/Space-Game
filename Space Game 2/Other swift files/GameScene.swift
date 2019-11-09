@@ -24,12 +24,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         self.init(size: size)
         self.ref = ref
     }
-   
-    deinit {
-        print("de inited")
-    }
     
-    let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true, "Uranus": true, "Neptune": true, "Saturn": true, "Jupiter": true]
+    let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true, "Uranus": true, "Neptune": true, "Saturn": true, "Jupiter": true, "Brick World": true]
     
     var menuView: MenuView!
     
@@ -135,7 +131,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     var localTime: TimeInterval!
     
-    var traveledToDict = [String: Bool]()
+    var goToOrDestroy = String()
+    var blueOrNormal = String()
+    
+    var traveledToDict = [String: Bool]() {
+        didSet {
+            let traveledToKeysCount = Array(self.traveledToDict.keys).count
+            let threshold = 47
+            let belowThreshold = traveledToKeysCount < threshold
+            goToOrDestroy = belowThreshold ? "Go to" : "Destroy"
+            self.setACourseButton.setTitle(belowThreshold ? "Set a Course" : "Destroy a Planet", for: .normal)
+            blueOrNormal = belowThreshold ? "rocket" : "blue rocket"
+        }
+    }
     var flagsDict = [String: Any]()
     
     var versionLabel = UILabel()
@@ -164,8 +172,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                                     shouldRecognizeSimultaneouslyWith shouldRecognizeSimultaneouslyWithGestureRecognizer:UIGestureRecognizer) -> Bool {
         return true
     }
-    
-    
     
     override func didMove(to view: SKView) {
         
@@ -226,8 +232,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                 }
         })
         
-        setACourseButton.setTitle("Set a Course", for: .normal)
-        let setACourseButtonWidth = 130.0
+        let setACourseButtonWidth = 150.0
         setACourseButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(setACourseButtonWidth / 2), y: self.view!.frame.height / 4, width: CGFloat(setACourseButtonWidth), height: CGFloat(30.0))
         formatButton(setACourseButton)
         setACourseButton.isHidden = true
@@ -238,7 +243,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         goButton.translatesAutoresizingMaskIntoConstraints = false
         goButton.topAnchor.constraint(equalTo: consoleView.bottomAnchor, constant: 20).isActive = true
         goButton.centerXAnchor.constraint(equalTo: view.centerXAnchor).isActive = true
-        goButton.widthAnchor.constraint(equalToConstant: 200).isActive = true
+        goButton.widthAnchor.constraint(equalToConstant: 220).isActive = true
         goButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         self.view?.addSubview(cancelButton)
@@ -520,19 +525,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             self.ref.child("planets/\(name)/values/visitors/\(self.username!)").setValue(true)
             NSLog("added visitor \(username!) to \(name)")
             self.ref.child("users/\(email!)/data/traveledTo/\(name)").setValue(true)
-        }
-    }
-    
-    func tableView(_ tableView: UITableView,
-                   didSelectRowAt indexPath: IndexPath) {
-        let planet = planetArray[indexPath.row]
-        if planet != currentPlanet && planet != travelingTo
-        {
-            planetSelection = planetArray[indexPath.row]
-            setView(view: goButton, hide: true)
-            goButton.setTitle("Go to \(planetArray[indexPath.row].name!)", for: .normal)
-            
-            setView(view: goButton, hide: false)
         }
     }
     
@@ -832,20 +824,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                 self.username = dict["nickname"] as? String
                 self.coordinatesSet = dict["coordinatesSet"] as? Bool ?? false
                 self.traveledToDict = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
-                if let tempFlagsDict = dict["flags"] as? [String: Bool]
-                {
-                    for key in tempFlagsDict.keys
-                    {
+                if let tempFlagsDict = dict["flags"] as? [String: Bool] {
+                    for key in tempFlagsDict.keys {
                         self.flagsDict[key] = ["number": 0]
                     }
                     self.pushFlagsDict()
                 }
-                else if let tempFlagsDict = dict["flags"] as? [String: Any]
-                {
                     
+                else if let tempFlagsDict = dict["flags"] as? [String: Any] {
                     self.flagsDict = tempFlagsDict
-                    
-                    
                 }
                 
                 for key in self.flagsDict.keys
@@ -1025,11 +1012,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: { [unowned self]
                 snap in
                 let dict = snap.value as! [String: Any]
-                let star = Planet(name: starString, radius: dict["radius"] as? Double ?? 100000, x: Int(dict["x"] as! Double * coordMultiplier * parsec),
-                                                                                           y: Int(dict["y"] as! Double * coordMultiplier * parsec),
-                                                                                           color: dict["color"] != nil ? UIColor(dict["color"] as! String) : .yellow,
-                                                                                           type: dict["type"] as? String ?? "Star")
-                let visitorDict = dict["visitors"] as? [String: Bool] ?? [String:Bool]()
+                let star = Planet(name: starString,
+                                  radius: dict["radius"] as? Double ?? 100000,
+                                  x: Int(dict["x"] as! Double * coordMultiplier * parsec),
+                                  y: Int(dict["y"] as! Double * coordMultiplier * parsec),
+                                  color: dict["color"] != nil ? UIColor(dict["color"] as! String) : .yellow,
+                                  type: dict["type"] as? String ?? "Star")
+                
+                let valueDict = dict["values"] as? [String: Any] ?? [String : Any]()
+                let visitorDict = valueDict["visitors"] as? [String: Bool] ?? [String : Bool]()
                 star.visitorCount = visitorDict.count
                 self.planetDict[starString] = star
                 group.leave()
@@ -1055,7 +1046,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             if planet.startingPlanet == true //process the starting planet first
             {
                 
-                rocket = SKSpriteNode(imageNamed: "rocket.png")
+                rocket = SKSpriteNode(imageNamed: "\(blueOrNormal).png")
+                print(blueOrNormal)
                 rocket.size = CGSize(width: 20, height: 40)
                 rocket.zPosition = 2
 
@@ -1110,7 +1102,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     {
         let travelingToName = travelingTo != nil ? travelingTo.name : "nil"
         let currentPlanetName = currentPlanet != nil ? currentPlanet.name : "nil"
-        //let path = "users/\(email!)/position"
         
         if positionX == nil
         {
@@ -1375,12 +1366,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                 }
                 else if planet.type == "Asteroid"
                 {
-                    
                     speedSum += 2000
                 }
                 else if planet.type == "Comet"
                 {
                     speedSum += 6666
+                }
+                else if planet.type == "Black Hole"
+                {
+                    speedSum += 200000
+                }
+                else if planet.type == "Brick World"
+                {
+                    speedSum += 123456
                 }
             }
         }
