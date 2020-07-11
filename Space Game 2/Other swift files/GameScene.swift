@@ -1047,7 +1047,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             {
                 
                 rocket = SKSpriteNode(imageNamed: "\(blueOrNormal).png")
-                print(blueOrNormal)
                 rocket.size = CGSize(width: 20, height: 40)
                 rocket.zPosition = 2
 
@@ -1144,12 +1143,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                 let oldTimestamp = coordDict["timestamp"] as! Int
                 let millisecondsElapsed = self.timestamp - oldTimestamp
                 NSLog("\(millisecondsElapsed) milliseconds since last load")
-
-                NSLog("x change: \(Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed)))")
-                NSLog("y change: \(Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed)))")
                 
-                self.positionX += Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed))
-                self.positionY += Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed))
+
+                if (self.timestamp > self.willLandOnPlanetTime) {
+                    self.positionX = 0
+                    self.positionY = 0
+                }
+                
+                else {
+                    self.positionX += Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed))
+                    self.positionY += Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed))
+                }
+                
             }
             
             if (group != nil)
