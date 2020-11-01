@@ -1327,8 +1327,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                 {
                     let xRot = cos(rot + .pi / 2)
                     let yRot = sin(rot + .pi / 2)
-                    planetLabel.position = CGPoint(x: planet.position.x + xRot * (CGFloat(planet.radius) + 5 * camera!.xScale),
-                                                   y: planet.position.y + yRot * (CGFloat(planet.radius) + 5 * camera!.xScale))
+                    let xPoint = planet.position.x + xRot * (CGFloat(planet.radius) + 5 * camera!.xScale)
+                    let yPoint = planet.position.y + yRot * (CGFloat(planet.radius) + 5 * camera!.xScale)
+                    planetLabel.position = CGPoint(x: xPoint, y: yPoint)
                 }
             }
         }
