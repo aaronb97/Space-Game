@@ -5,7 +5,8 @@ objects are realistic and to scale. Players start on Earth and choose a destinat
 Players are able to double their speed when opening the app after a period of 12 hours,
 effectively providing exponential growth.
 
-## First-time player sequence:
+First-time player sequence:
+
 <img src="gifs/intro.gif" width="350">
 
 The relative position of objects to Earth and eachother is realistic as well (updated on a daily basis, z-axis is flattened)
@@ -15,3 +16,7 @@ When players land on an object, they collect a flag with the planet depicted as 
 landed there before them:
 
 <img src="gifs/flags.gif" width="350">
+
+Example notification:
+
+<img src="gifs/notification.PNG" width="350">
