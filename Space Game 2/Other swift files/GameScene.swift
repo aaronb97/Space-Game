@@ -19,6 +19,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         static let flags = "offline.flags"
         static let position = "offline.position"
         static let lastPlanetUpdate = "offline.lastPlanetUpdate"
+        static let planetPositionTimestamp = "offline.planetPositionTimestamp"
     }
 
     private let userDefaults = UserDefaults.standard
@@ -211,6 +212,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         didSet {
             userDefaults.set(lastPlanetUpdateDate, forKey: StorageKey.lastPlanetUpdate)
         }
+    }
+    private var planetPositionTimestamp: Int? {
+        didSet {
+            if let value = planetPositionTimestamp {
+                userDefaults.set(value, forKey: StorageKey.planetPositionTimestamp)
+            }
+        }
+    }
+    private var planetPositionDate: Date {
+        if let timestamp = planetPositionTimestamp {
+            return Date(timeIntervalSince1970: Double(timestamp) / 1000)
+        }
+        return Date()
     }
     
     var positionX : Int!
@@ -869,6 +883,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             self.getPositionFromServer(group)
             
             group.notify(queue: .main) {
+                self.preparePlanetPositionTimestampForColdStart()
                 self.loadPlanets({                      //part 3: load planets
                     
                     //self.addGameViews()
@@ -1020,21 +1035,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     {
         loadDate(nil)
     }
+
+    private func shouldUpdatePlanetPositionTimestampOnColdStart() -> Bool
+    {
+        if coordinatesSet == false {
+            return true
+        }
+        return travelingToName == nil && currentPlanetName != nil
+    }
+
+    private func preparePlanetPositionTimestampForColdStart()
+    {
+        if planetPositionTimestamp == nil {
+            planetPositionTimestamp = userDefaults.object(forKey: StorageKey.planetPositionTimestamp) as? Int
+        }
+        guard shouldUpdatePlanetPositionTimestampOnColdStart() else { return }
+        planetPositionTimestamp = Int(Date().timeIntervalSince1970 * 1000)
+    }
     
     func loadDate(_ group: DispatchGroup! )
     {
         let now = Date()
         timestamp = Int(now.timeIntervalSince1970 * 1000)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-M-dd"
-        dateString = dateFormatter.string(from: now)
-        if lastPlanetUpdateDate == nil {
-            lastPlanetUpdateDate = userDefaults.string(forKey: StorageKey.lastPlanetUpdate)
-        }
-        if lastPlanetUpdateDate != dateString {
-            lastPlanetUpdateDate = dateString
-            updatePlanetPositions(for: now)
-        }
         if (group != nil)
         {
             group.leave()
@@ -1052,7 +1074,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     func loadPlanets( _ callback: @escaping () -> () )
     {
-        let positions = computeOrbitPositions(for: Date())
+        let positions = computeOrbitPositions(for: planetPositionDate)
         for definition in orbitDefinitions
         {
             guard let position = positions[definition.name] else { continue }
@@ -1100,10 +1122,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         return positions
     }
 
-    func updatePlanetPositions(for date: Date)
+    func updatePlanetPositions()
     {
         guard planetDict.isEmpty == false else { return }
-        let positions = computeOrbitPositions(for: date)
+        let positions = computeOrbitPositions(for: planetPositionDate)
         for definition in orbitDefinitions
         {
             guard let position = positions[definition.name],
@@ -1212,6 +1234,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             velocityY = coordDict["velocityY"] as? Double ?? 0
             travelingToName = coordDict["travelingTo"] as? String
             currentPlanetName = coordDict["currentPlanet"] as? String
+            if travelingToName == "nil" {
+                travelingToName = nil
+            }
+            if currentPlanetName == "nil" {
+                currentPlanetName = nil
+            }
             nextSpeedBoostTime = coordDict["nextSpeedBoostTime"] as? Int ?? Int.max
             willLandOnPlanetTime = coordDict["willLandOnPlanetTime"] as? Int ?? Int.max
 
