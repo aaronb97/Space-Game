@@ -10,8 +10,6 @@ import Foundation
 import UIKit
 
 class MenuView : UIView{
-    
-    let signOutButton = UIButton()
     let flagsButton = UIButton()
     let backButton = UIButton()
     let flagScrollView = UIScrollView()
@@ -21,16 +19,6 @@ class MenuView : UIView{
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
-        addSubview(signOutButton)
-        formatButton(signOutButton)
-        signOutButton.addTarget(self, action:#selector(buttonPressed), for: .touchUpInside)
-        signOutButton.setTitle("Sign Out", for: .normal)
-        signOutButton.translatesAutoresizingMaskIntoConstraints = false
-        signOutButton.centerXAnchor.constraint(equalTo: self.centerXAnchor).isActive = true
-        signOutButton.bottomAnchor.constraint(equalTo: self.safeBottomAnchor, constant: -30).isActive = true
-        signOutButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
-        signOutButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         
         addSubview(flagsButton)
         formatButton(flagsButton)
@@ -91,17 +79,12 @@ class MenuView : UIView{
     
     @objc func buttonPressed(_ button: UIButton)
     {
-        if button == signOutButton
-        {
-            gameScene.prepareSignOut()
-        }
-        else if button == backButton
+        if button == backButton
         {
             if flagScrollView.isHidden == false
             {
                 setView(view: flagScrollView, hide: true)
                 setView(view: flagsButton, hide: false)
-                setView(view: signOutButton, hide: false)
             }
             else
             {
@@ -125,7 +108,6 @@ class MenuView : UIView{
             
             let verticalSpacing : CGFloat = 120
             setView(view: flagsButton, hide: true)
-            setView(view: signOutButton, hide: true)
             
             let imageWidth : CGFloat = 190
             let imageHeight : CGFloat = 100

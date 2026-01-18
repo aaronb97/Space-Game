@@ -18,6 +18,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         static let traveledTo = "offline.traveledTo"
         static let flags = "offline.flags"
         static let position = "offline.position"
+        static let lastPlanetUpdate = "offline.lastPlanetUpdate"
     }
 
     private let userDefaults = UserDefaults.standard
@@ -25,38 +26,113 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true, "Uranus": true, "Neptune": true, "Saturn": true, "Jupiter": true, "Brick World": true]
 
-    private struct PlanetDefinition {
+    private struct OrbitDefinition {
         let name: String
         let radius: Double
         let startingPlanet: Bool
-        let xAU: Double
-        let yAU: Double
         let color: UIColor
         let type: String
+        let kepler: KeplerianElements?
+        let fixedPositionAU: (x: Double, y: Double, z: Double)?
+        let satellite: SatelliteElements?
+        let orbits: String?
+
+        init(name: String,
+             radius: Double,
+             startingPlanet: Bool,
+             color: UIColor,
+             type: String,
+             kepler: KeplerianElements? = nil,
+             fixedPositionAU: (x: Double, y: Double, z: Double)? = nil,
+             satellite: SatelliteElements? = nil,
+             orbits: String? = nil) {
+            self.name = name
+            self.radius = radius
+            self.startingPlanet = startingPlanet
+            self.color = color
+            self.type = type
+            self.kepler = kepler
+            self.fixedPositionAU = fixedPositionAU
+            self.satellite = satellite
+            self.orbits = orbits
+        }
     }
 
-    private let planetDefinitions: [PlanetDefinition] = [
-        PlanetDefinition(name: "The Sun", radius: 696000, startingPlanet: false, xAU: 0.0, yAU: 0.0, color: .yellow, type: "Star"),
-        PlanetDefinition(name: "Mercury", radius: 2440, startingPlanet: false, xAU: 0.39, yAU: 0.08, color: UIColor("b5b5b5"), type: "Planet"),
-        PlanetDefinition(name: "Venus", radius: 6052, startingPlanet: false, xAU: 0.72, yAU: -0.12, color: UIColor("d9c27c"), type: "Planet"),
-        PlanetDefinition(name: "Earth", radius: 6371, startingPlanet: true, xAU: 1.0, yAU: 0.0, color: UIColor("2a6dd4"), type: "Planet"),
-        PlanetDefinition(name: "The Moon", radius: 1737, startingPlanet: false, xAU: 1.02, yAU: 0.08, color: .moonColor, type: "Moon"),
-        PlanetDefinition(name: "Mars", radius: 3390, startingPlanet: false, xAU: 1.52, yAU: 0.2, color: UIColor("b24b2a"), type: "Planet"),
-        PlanetDefinition(name: "Phobos", radius: 11, startingPlanet: false, xAU: 1.53, yAU: 0.23, color: UIColor("8b8b8b"), type: "Moon"),
-        PlanetDefinition(name: "Deimos", radius: 6, startingPlanet: false, xAU: 1.54, yAU: 0.17, color: UIColor("9a9a9a"), type: "Moon"),
-        PlanetDefinition(name: "Ceres", radius: 473, startingPlanet: false, xAU: 2.77, yAU: -0.25, color: UIColor("a3a3a3"), type: "Dwarf Planet"),
-        PlanetDefinition(name: "Brick World", radius: 4000, startingPlanet: false, xAU: 3.3, yAU: 0.7, color: UIColor("8b5a2b"), type: "Brick World"),
-        PlanetDefinition(name: "Jupiter", radius: 69911, startingPlanet: false, xAU: 5.2, yAU: 0.4, color: UIColor("d2a679"), type: "Planet"),
-        PlanetDefinition(name: "Io", radius: 1821, startingPlanet: false, xAU: 5.21, yAU: 0.45, color: UIColor("d8c35a"), type: "Moon"),
-        PlanetDefinition(name: "Europa", radius: 1561, startingPlanet: false, xAU: 5.22, yAU: 0.35, color: UIColor("d9d2c0"), type: "Moon"),
-        PlanetDefinition(name: "Ganymede", radius: 2634, startingPlanet: false, xAU: 5.23, yAU: 0.5, color: UIColor("a0a0a0"), type: "Moon"),
-        PlanetDefinition(name: "Callisto", radius: 2410, startingPlanet: false, xAU: 5.24, yAU: 0.3, color: UIColor("6f5f4c"), type: "Moon"),
-        PlanetDefinition(name: "Saturn", radius: 58232, startingPlanet: false, xAU: 9.58, yAU: -0.5, color: UIColor("d1c089"), type: "Planet"),
-        PlanetDefinition(name: "Titan", radius: 2575, startingPlanet: false, xAU: 9.6, yAU: -0.55, color: UIColor("c49b54"), type: "Moon"),
-        PlanetDefinition(name: "Uranus", radius: 25362, startingPlanet: false, xAU: 19.2, yAU: 0.6, color: UIColor("7ec8d3"), type: "Planet"),
-        PlanetDefinition(name: "Neptune", radius: 24622, startingPlanet: false, xAU: 30.05, yAU: -0.8, color: UIColor("4a6fd1"), type: "Planet"),
-        PlanetDefinition(name: "Pluto", radius: 1188, startingPlanet: false, xAU: 39.5, yAU: 0.9, color: UIColor("b8a798"), type: "Dwarf Planet")
-    ]
+    private let orbitDefinitions: [OrbitDefinition] = {
+        let luytenBase = raDecDistToEclipticAU(raHours: 1, raMinutes: 39, raSeconds: 1.3, decDegrees: -17, decMinutes: 57, decSeconds: 1.8, distanceLightYears: 8.73)
+        let luytenOffsetAU = ((2.1 + 8.8) / 2.0) / 2.0
+        return [
+            OrbitDefinition(name: "The Sun", radius: 696340, startingPlanet: false, color: .yellow, type: "Star", fixedPositionAU: (x: 0, y: 0, z: 0)),
+            OrbitDefinition(name: "Mercury", radius: 2439.7, startingPlanet: false, color: UIColor("c0c0c0"), type: "Planet",
+                            kepler: KeplerianElements(a: 0.38709893, e: 0.20563069, i: 7.00487, L: 252.25084, longPeri: 77.45645, longNode: 48.33167, LDot: 149472.67411175)),
+            OrbitDefinition(name: "Venus", radius: 6051.8, startingPlanet: false, color: UIColor("ffc649"), type: "Planet",
+                            kepler: KeplerianElements(a: 0.72333199, e: 0.00677323, i: 3.39471, L: 181.97973, longPeri: 131.53298, longNode: 76.68069, LDot: 58517.81538729)),
+            OrbitDefinition(name: "Earth", radius: 6371, startingPlanet: true, color: UIColor("6b93d6"), type: "Planet",
+                            kepler: KeplerianElements(a: 1.00000011, e: 0.01671022, i: 0.00005, L: 100.46435, longPeri: 102.94719, longNode: -11.26064, LDot: 35999.37244981)),
+            OrbitDefinition(name: "The Moon", radius: 1737.4, startingPlanet: false, color: .moonColor, type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 384400, e: 0.0549, i: 5.145, longNode: 125.08, argPeri: 318.15, meanAnomalyAtEpoch: 115.3654, meanMotionDegPerDay: 360 / 27.321661),
+                            orbits: "Earth"),
+            OrbitDefinition(name: "Brick World", radius: 6371, startingPlanet: false, color: UIColor("b55239"), type: "Planet",
+                            kepler: KeplerianElements(a: 1.00000011, e: 0.01671022, i: 0.00005, L: 280.46435, longPeri: 102.94719, longNode: -11.26064, LDot: 35999.37244981)),
+            OrbitDefinition(name: "Mars", radius: 3389.5, startingPlanet: false, color: UIColor("cd5c5c"), type: "Planet",
+                            kepler: KeplerianElements(a: 1.52366231, e: 0.09341233, i: 1.85061, L: 355.45332, longPeri: 336.04084, longNode: 49.57854, LDot: 19140.30268499)),
+            OrbitDefinition(name: "Phobos", radius: 11.267, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 9376, e: 0.0151, i: 1.075, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 0.31891),
+                            orbits: "Mars"),
+            OrbitDefinition(name: "Deimos", radius: 6.2, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 23463, e: 0.00033, i: 1.79, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 1.26244),
+                            orbits: "Mars"),
+            OrbitDefinition(name: "Ceres", radius: 473, startingPlanet: false, color: UIColor("9ca3af"), type: "Dwarf Planet",
+                            kepler: KeplerianElements(a: 2.767, e: 0.0758, i: 10.593, L: 95.989, longPeri: 73.597, longNode: 80.305, LDot: 7828.0)),
+            OrbitDefinition(name: "Jupiter", radius: 69911, startingPlanet: false, color: UIColor("fad5a5"), type: "Planet",
+                            kepler: KeplerianElements(a: 5.20336301, e: 0.04839266, i: 1.3053, L: 34.40438, longPeri: 14.75385, longNode: 100.55615, LDot: 3034.90371757)),
+            OrbitDefinition(name: "Io", radius: 1821.6, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 421700, e: 0.0041, i: 0.04, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 1.769),
+                            orbits: "Jupiter"),
+            OrbitDefinition(name: "Europa", radius: 1560.8, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 671100, e: 0.009, i: 0.47, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 3.551),
+                            orbits: "Jupiter"),
+            OrbitDefinition(name: "Ganymede", radius: 2634.1, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 1070400, e: 0.0013, i: 0.2, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 7.155),
+                            orbits: "Jupiter"),
+            OrbitDefinition(name: "Callisto", radius: 2410.3, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 1882700, e: 0.007, i: 0.19, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 16.689),
+                            orbits: "Jupiter"),
+            OrbitDefinition(name: "Saturn", radius: 58232, startingPlanet: false, color: UIColor("d8ca9d"), type: "Planet",
+                            kepler: KeplerianElements(a: 9.53707032, e: 0.0541506, i: 2.48446, L: 49.94432, longPeri: 92.43194, longNode: 113.71504, LDot: 1222.11451204)),
+            OrbitDefinition(name: "Titan", radius: 2574.7, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 1221870, e: 0.0288, i: 0.348, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 15.945),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Uranus", radius: 25362, startingPlanet: false, color: UIColor("4fd0e7"), type: "Planet",
+                            kepler: KeplerianElements(a: 19.19126393, e: 0.04716771, i: 0.76986, L: 313.23218, longPeri: 170.96424, longNode: 74.22988, LDot: 428.49512562)),
+            OrbitDefinition(name: "Neptune", radius: 24622, startingPlanet: false, color: UIColor("4b70dd"), type: "Planet",
+                            kepler: KeplerianElements(a: 30.06896348, e: 0.00858587, i: 1.76917, L: 304.88003, longPeri: 44.97135, longNode: 131.72169, LDot: 218.46515314)),
+            OrbitDefinition(name: "Pluto", radius: 1188.3, startingPlanet: false, color: UIColor("a0522d"), type: "Dwarf Planet",
+                            kepler: KeplerianElements(a: 39.48168677, e: 0.24880766, i: 17.14175, L: 238.92881, longPeri: 224.06676, longNode: 110.30347, LDot: 145.20780515)),
+            OrbitDefinition(name: "Proxima Centauri", radius: 107280, startingPlanet: false, color: UIColor("ffcccc"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 14, raMinutes: 29, raSeconds: 42.95, decDegrees: -62, decMinutes: 40, decSeconds: 46.1, distanceLightYears: 4.2465)),
+            OrbitDefinition(name: "Alpha Centauri A", radius: 854190, startingPlanet: false, color: UIColor("fff5e0"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 14, raMinutes: 39, raSeconds: 36.49, decDegrees: -60, decMinutes: 50, decSeconds: 2.3, distanceLightYears: 4.37)),
+            OrbitDefinition(name: "Alpha Centauri B", radius: 602050, startingPlanet: false, color: UIColor("ffd699"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 14, raMinutes: 39, raSeconds: 35.06, decDegrees: -60, decMinutes: 50, decSeconds: 13.8, distanceLightYears: 4.37)),
+            OrbitDefinition(name: "Barnard's Star", radius: 136150, startingPlanet: false, color: UIColor("ffb3b3"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 17, raMinutes: 57, raSeconds: 48.5, decDegrees: 4, decMinutes: 41, decSeconds: 36.2, distanceLightYears: 5.96)),
+            OrbitDefinition(name: "Wolf 359", radius: 111410, startingPlanet: false, color: UIColor("ff9999"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 10, raMinutes: 56, raSeconds: 29.2, decDegrees: 7, decMinutes: 0, decSeconds: 52.8, distanceLightYears: 7.86)),
+            OrbitDefinition(name: "Lalande 21185", radius: 264690, startingPlanet: false, color: UIColor("ffb3b3"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 11, raMinutes: 3, raSeconds: 20.2, decDegrees: 35, decMinutes: 58, decSeconds: 11.5, distanceLightYears: 8.31)),
+            OrbitDefinition(name: "Sirius", radius: 1189340, startingPlanet: false, color: UIColor("a8c8ff"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 6, raMinutes: 45, raSeconds: 8.9, decDegrees: -16, decMinutes: 42, decSeconds: 58.0, distanceLightYears: 8.6)),
+            OrbitDefinition(name: "Gliese 65 A (BL Ceti)", radius: 100490, startingPlanet: false, color: UIColor("ff8080"), type: "Star",
+                            fixedPositionAU: (x: luytenBase.x - luytenOffsetAU, y: luytenBase.y, z: luytenBase.z)),
+            OrbitDefinition(name: "Gliese 65 B (UV Ceti)", radius: 100490, startingPlanet: false, color: UIColor("ff8080"), type: "Star",
+                            fixedPositionAU: (x: luytenBase.x + luytenOffsetAU, y: luytenBase.y, z: luytenBase.z)),
+            OrbitDefinition(name: "Ross 154", radius: 146430, startingPlanet: false, color: UIColor("ffb3b3"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 18, raMinutes: 49, raSeconds: 49.4, decDegrees: -23, decMinutes: 50, decSeconds: 10.4, distanceLightYears: 9.69)),
+            OrbitDefinition(name: "Ross 248", radius: 111410, startingPlanet: false, color: UIColor("ff9999"), type: "Star",
+                            fixedPositionAU: raDecDistToEclipticAU(raHours: 23, raMinutes: 41, raSeconds: 54.7, decDegrees: 44, decMinutes: 10, decSeconds: 30.3, distanceLightYears: 10.3))
+        ]
+    }()
     
     var menuView: MenuView!
     
@@ -86,6 +162,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     weak var appDelegate : AppDelegate!
     
     var dateString : String!
+    private var lastPlanetUpdateDate: String? {
+        didSet {
+            userDefaults.set(lastPlanetUpdateDate, forKey: StorageKey.lastPlanetUpdate)
+        }
+    }
     
     var positionX : Int!
     var positionY : Int!
@@ -793,7 +874,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         formatConsole(setACourseView: false)
         
         
-        self.addChild(camera!)
+        if camera?.parent == nil {
+            self.addChild(camera!)
+        }
     }
     
     func formatConsole(setACourseView: Bool)
@@ -922,6 +1005,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-M-dd"
         dateString = dateFormatter.string(from: now)
+        if lastPlanetUpdateDate == nil {
+            lastPlanetUpdateDate = userDefaults.string(forKey: StorageKey.lastPlanetUpdate)
+        }
+        if lastPlanetUpdateDate != dateString {
+            lastPlanetUpdateDate = dateString
+            updatePlanetPositions(for: now)
+        }
         if (group != nil)
         {
             group.leave()
@@ -931,7 +1021,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     func loadPlanetList( _ group: DispatchGroup)
     {
-        planetList = planetDefinitions.map { $0.name }
+        planetList = orbitDefinitions.map { $0.name }
         starList = []
         group.leave()
         NSLog("planet list loaded")
@@ -939,10 +1029,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     func loadPlanets( _ callback: @escaping () -> () )
     {
-        for definition in planetDefinitions
+        let positions = computeOrbitPositions(for: Date())
+        for definition in orbitDefinitions
         {
-            let x = Int(definition.xAU * coordMultiplier * AU)
-            let y = Int(definition.yAU * coordMultiplier * AU)
+            guard let position = positions[definition.name] else { continue }
+            let x = Int(position.x * coordMultiplier * AU)
+            let y = Int(position.y * coordMultiplier * AU)
             let planet = Planet(name: definition.name,
                                 radius: definition.radius,
                                 startingPlanet: definition.startingPlanet,
@@ -953,6 +1045,53 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             planetDict[definition.name] = planet
         }
         callback()
+    }
+
+    func computeOrbitPositions(for date: Date) -> [String: (x: Double, y: Double, z: Double)]
+    {
+        var positions = [String: (x: Double, y: Double, z: Double)]()
+        for definition in orbitDefinitions
+        {
+            if let fixed = definition.fixedPositionAU
+            {
+                positions[definition.name] = fixed
+                continue
+            }
+            if let kepler = definition.kepler
+            {
+                positions[definition.name] = keplerianPositionAU(elements: kepler, date: date)
+                continue
+            }
+            if let satellite = definition.satellite,
+               let parent = definition.orbits,
+               let parentPosition = positions[parent]
+            {
+                let satellitePosition = satellitePositionAU(elements: satellite, date: date)
+                positions[definition.name] = (x: parentPosition.x + satellitePosition.x,
+                                              y: parentPosition.y + satellitePosition.y,
+                                              z: parentPosition.z + satellitePosition.z)
+                continue
+            }
+            positions[definition.name] = (x: 0, y: 0, z: 0)
+        }
+        return positions
+    }
+
+    func updatePlanetPositions(for date: Date)
+    {
+        guard planetDict.isEmpty == false else { return }
+        let positions = computeOrbitPositions(for: date)
+        for definition in orbitDefinitions
+        {
+            guard let position = positions[definition.name],
+                  let planet = planetDict[definition.name] else { continue }
+            planet.x = Int(position.x * coordMultiplier * AU)
+            planet.y = Int(position.y * coordMultiplier * AU)
+        }
+        if positionX != nil && positionY != nil
+        {
+            movePlanets()
+        }
     }
     
     func drawObjects()
@@ -1066,6 +1205,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                     positionY = posY + Int(velocityY / millisecondsPerHour * Double(millisecondsElapsed))
                 }
             }
+        }
+
+        if positionX == nil || positionY == nil {
+            coordinatesSet = false
+            travelingToName = nil
+            currentPlanetName = nil
+            userDefaults.set(false, forKey: StorageKey.coordinatesSet)
         }
 
         if (group != nil)
