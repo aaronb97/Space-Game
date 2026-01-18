@@ -17,11 +17,9 @@ class Planet: SKShapeNode {
     var x: Int!
     var y: Int!
     var distance: Double!
-    var visitorDict: [String: Bool]!
     
     var color : UIColor!
     var type: String!
-    var visitorCount: Int = 0
     
     init(name: String, radius: Double, startingPlanet: Bool = false, x: Int, y: Int, color: UIColor = .moonColor, type: String!) {
         

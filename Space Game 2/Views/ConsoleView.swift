@@ -214,8 +214,6 @@ class ConsoleView: UIView, UIPickerViewDelegate, UIPickerViewDataSource{
             infoLabel.text?.append("\nYou have been here")
         }
     
-        infoLabel.text?.append("\nVisited by \(planet.visitorCount)")
-    
         if planet != gameScene.currentPlanet && planet != gameScene.travelingTo
         {
             gameScene.planetSelection = planet

@@ -8,24 +8,55 @@
 
 import SpriteKit
 import GameplayKit
-import Firebase
-import FirebaseDatabase
-import GoogleSignIn
 import UserNotifications
 
 
 class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate {
-    
-    weak var ref: DatabaseReference!
-    let center = UNUserNotificationCenter.current()
-
-    convenience init (size: CGSize, ref: DatabaseReference)
-    {
-        self.init(size: size)
-        self.ref = ref
+    private enum StorageKey {
+        static let nickname = "offline.nickname"
+        static let coordinatesSet = "offline.coordinatesSet"
+        static let traveledTo = "offline.traveledTo"
+        static let flags = "offline.flags"
+        static let position = "offline.position"
     }
+
+    private let userDefaults = UserDefaults.standard
+    let center = UNUserNotificationCenter.current()
     
     let planetTexturesDict : [String: Bool] = ["Earth": true, "The Moon": true, "Mars": true, "The Sun": true, "Mercury": true, "Uranus": true, "Neptune": true, "Saturn": true, "Jupiter": true, "Brick World": true]
+
+    private struct PlanetDefinition {
+        let name: String
+        let radius: Double
+        let startingPlanet: Bool
+        let xAU: Double
+        let yAU: Double
+        let color: UIColor
+        let type: String
+    }
+
+    private let planetDefinitions: [PlanetDefinition] = [
+        PlanetDefinition(name: "The Sun", radius: 696000, startingPlanet: false, xAU: 0.0, yAU: 0.0, color: .yellow, type: "Star"),
+        PlanetDefinition(name: "Mercury", radius: 2440, startingPlanet: false, xAU: 0.39, yAU: 0.08, color: UIColor("b5b5b5"), type: "Planet"),
+        PlanetDefinition(name: "Venus", radius: 6052, startingPlanet: false, xAU: 0.72, yAU: -0.12, color: UIColor("d9c27c"), type: "Planet"),
+        PlanetDefinition(name: "Earth", radius: 6371, startingPlanet: true, xAU: 1.0, yAU: 0.0, color: UIColor("2a6dd4"), type: "Planet"),
+        PlanetDefinition(name: "The Moon", radius: 1737, startingPlanet: false, xAU: 1.02, yAU: 0.08, color: .moonColor, type: "Moon"),
+        PlanetDefinition(name: "Mars", radius: 3390, startingPlanet: false, xAU: 1.52, yAU: 0.2, color: UIColor("b24b2a"), type: "Planet"),
+        PlanetDefinition(name: "Phobos", radius: 11, startingPlanet: false, xAU: 1.53, yAU: 0.23, color: UIColor("8b8b8b"), type: "Moon"),
+        PlanetDefinition(name: "Deimos", radius: 6, startingPlanet: false, xAU: 1.54, yAU: 0.17, color: UIColor("9a9a9a"), type: "Moon"),
+        PlanetDefinition(name: "Ceres", radius: 473, startingPlanet: false, xAU: 2.77, yAU: -0.25, color: UIColor("a3a3a3"), type: "Dwarf Planet"),
+        PlanetDefinition(name: "Brick World", radius: 4000, startingPlanet: false, xAU: 3.3, yAU: 0.7, color: UIColor("8b5a2b"), type: "Brick World"),
+        PlanetDefinition(name: "Jupiter", radius: 69911, startingPlanet: false, xAU: 5.2, yAU: 0.4, color: UIColor("d2a679"), type: "Planet"),
+        PlanetDefinition(name: "Io", radius: 1821, startingPlanet: false, xAU: 5.21, yAU: 0.45, color: UIColor("d8c35a"), type: "Moon"),
+        PlanetDefinition(name: "Europa", radius: 1561, startingPlanet: false, xAU: 5.22, yAU: 0.35, color: UIColor("d9d2c0"), type: "Moon"),
+        PlanetDefinition(name: "Ganymede", radius: 2634, startingPlanet: false, xAU: 5.23, yAU: 0.5, color: UIColor("a0a0a0"), type: "Moon"),
+        PlanetDefinition(name: "Callisto", radius: 2410, startingPlanet: false, xAU: 5.24, yAU: 0.3, color: UIColor("6f5f4c"), type: "Moon"),
+        PlanetDefinition(name: "Saturn", radius: 58232, startingPlanet: false, xAU: 9.58, yAU: -0.5, color: UIColor("d1c089"), type: "Planet"),
+        PlanetDefinition(name: "Titan", radius: 2575, startingPlanet: false, xAU: 9.6, yAU: -0.55, color: UIColor("c49b54"), type: "Moon"),
+        PlanetDefinition(name: "Uranus", radius: 25362, startingPlanet: false, xAU: 19.2, yAU: 0.6, color: UIColor("7ec8d3"), type: "Planet"),
+        PlanetDefinition(name: "Neptune", radius: 24622, startingPlanet: false, xAU: 30.05, yAU: -0.8, color: UIColor("4a6fd1"), type: "Planet"),
+        PlanetDefinition(name: "Pluto", radius: 1188, startingPlanet: false, xAU: 39.5, yAU: 0.9, color: UIColor("b8a798"), type: "Dwarf Planet")
+    ]
     
     var menuView: MenuView!
     
@@ -41,7 +72,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         didSet {
             if let name = username
             {
-                usernameLabel.text = "Signed in as \(name)"
+                usernameLabel.text = "\(name)"
             }
             else
             {
@@ -108,7 +139,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     let starFieldWidth : CGFloat = 1000
     let starFieldHeight : CGFloat = 2000
     
-    var email: String!
     var timestamp : Int! {
         didSet {
             if view != nil
@@ -142,6 +172,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             goToOrDestroy = belowThreshold ? "Go to" : "Destroy"
             self.setACourseButton.setTitle(belowThreshold ? "Set a Course" : "Destroy a Planet", for: .normal)
             blueOrNormal = belowThreshold ? "rocket" : "blue rocket"
+            userDefaults.set(traveledToDict, forKey: StorageKey.traveledTo)
         }
     }
     var flagsDict = [String: Any]()
@@ -217,20 +248,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         
         
         
-        //ref = Database.database().reference()
-        email = Auth.auth().currentUser?.email?.replacingOccurrences(of: ".", with: ",")
-        
-        ref.child("users").child(email).observeSingleEvent(of: .value, with: { [unowned self]
-            snap in
-                if (!snap.exists())
-                {
-                    self.nicknameSetup()
-                }
-                else
-                {
-                    self.hardLoad()
-                }
-        })
+        if let savedName = userDefaults.string(forKey: StorageKey.nickname)
+        {
+            username = savedName
+            hardLoad()
+        }
+        else
+        {
+            nicknameSetup()
+        }
         
         let setACourseButtonWidth = 150.0
         setACourseButton.frame = CGRect(x: (self.view?.center.x)! - CGFloat(setACourseButtonWidth / 2), y: self.view!.frame.height / 4, width: CGFloat(setACourseButtonWidth), height: CGFloat(30.0))
@@ -405,10 +431,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             planet.fillTexture = nil
         }
         planetDict = [String: Planet]()
-        pushPositionToServer()
-        GIDSignIn.sharedInstance()?.signOut()
-        UserDefaults.standard.set(false, forKey: "StaySignedIn")
-        appDelegate.showSignInScreen()
+        traveledToDict = [String: Bool]()
+        flagsDict = [String: Any]()
+        coordinatesSet = false
+        positionX = nil
+        positionY = nil
+        velocityX = 0
+        velocityY = 0
+        velocity = 0
+        travelingTo = nil
+        currentPlanet = nil
+        nextSpeedBoostTime = Int.max
+        willLandOnPlanetTime = Int.max
+        userDefaults.removeObject(forKey: StorageKey.nickname)
+        userDefaults.removeObject(forKey: StorageKey.coordinatesSet)
+        userDefaults.removeObject(forKey: StorageKey.traveledTo)
+        userDefaults.removeObject(forKey: StorageKey.flags)
+        userDefaults.removeObject(forKey: StorageKey.position)
+        nicknameSetup()
     }
     
     func hideMenu()
@@ -486,34 +526,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         let flagName = "\(currentPlanet.name!) \(currentFlag)"
         if flagsDict[flagName] == nil
         {
-            ref.child("flags/\(flagName)/count").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
-                
-                var count = 0
-                if !snapshot.exists()
-                {
-                    count = 1
-                    self.flagsDict[flagName] = ["number": 1, "timestamp": self.timestamp]
-                    self.ref.child("flags/\(flagName)/count").setValue(2)
-                }
-                else
-                {
-                    count = snapshot.value as! Int
-                    self.flagsDict[flagName] = ["number": count, "timestamp": self.timestamp]
-                    self.ref.child("flags/\(flagName)/count").setValue(count + 1)
-                }
-                
-                self.pushFlagsDict()
-                self.loadDate(nil)
-                self.consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: ".")) #\(count)'!")
-            })
-            
-            
+            let count = (flagsDict.count + 1)
+            flagsDict[flagName] = ["number": count, "timestamp": timestamp as Any]
+            pushFlagsDict()
+            loadDate(nil)
+            consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: ".")) #\(count)'!")
         }
     }
     
     func pushFlagsDict()
     {
-        ref.child("users/\(email!)/data/flags").setValue(flagsDict)
+        userDefaults.set(flagsDict, forKey: StorageKey.flags)
     }
     
     func addVisitorToPlanet(_ name: String)
@@ -522,9 +545,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         if traveledToDict[name] != true
         {
             traveledToDict[name] = true
-            self.ref.child("planets/\(name)/values/visitors/\(self.username!)").setValue(true)
             NSLog("added visitor \(username!) to \(name)")
-            self.ref.child("users/\(email!)/data/traveledTo/\(name)").setValue(true)
         }
     }
     
@@ -817,68 +838,46 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     func getUserData(_ group: DispatchGroup)
     {
-        ref.child("users/\(email!)/data").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
-            
-            if let dict = snapshot.value as? [String: Any]
-            {
-                self.username = dict["nickname"] as? String
-                self.coordinatesSet = dict["coordinatesSet"] as? Bool ?? false
-                self.traveledToDict = dict["traveledTo"] as? [String: Bool] ?? [String: Bool]()
-                if let tempFlagsDict = dict["flags"] as? [String: Bool] {
-                    for key in tempFlagsDict.keys {
-                        self.flagsDict[key] = ["number": 0]
-                    }
-                    self.pushFlagsDict()
-                }
-                    
-                else if let tempFlagsDict = dict["flags"] as? [String: Any] {
-                    self.flagsDict = tempFlagsDict
-                }
-                
-                for key in self.flagsDict.keys
-                {
-                    if key.contains("v0,1")
-                    {
-                        self.flagsDict["Antique \(key.replacingOccurrences(of: "(v0,1 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = self.flagsDict[key]
-                        
-                        self.flagsDict[key] = nil
-                    }
-                    else if key.contains("v0,2")
-                    {
-                        self.flagsDict["Vintage \(key.replacingOccurrences(of: "(v0,2 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = self.flagsDict[key]
-                        
-                        self.flagsDict[key] = nil
-                    }
-                }
-            }
-            group.leave()
-            NSLog("got user data for \(self.email ?? "nil")")
-        }) { (error) in
-            NSLog(error.localizedDescription)
-            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
+        if let savedName = userDefaults.string(forKey: StorageKey.nickname)
+        {
+            username = savedName
         }
+        coordinatesSet = userDefaults.bool(forKey: StorageKey.coordinatesSet)
+        traveledToDict = userDefaults.dictionary(forKey: StorageKey.traveledTo) as? [String: Bool] ?? [String: Bool]()
+
+        if let tempFlagsDict = userDefaults.dictionary(forKey: StorageKey.flags) as? [String: Bool] {
+            flagsDict = [String: Any]()
+            for key in tempFlagsDict.keys {
+                flagsDict[key] = ["number": 0]
+            }
+            pushFlagsDict()
+        }
+        else if let tempFlagsDict = userDefaults.dictionary(forKey: StorageKey.flags) as? [String: Any] {
+            flagsDict = tempFlagsDict
+        }
+
+        for key in flagsDict.keys
+        {
+            if key.contains("v0,1")
+            {
+                flagsDict["Antique \(key.replacingOccurrences(of: "(v0,1 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = flagsDict[key]
+                flagsDict[key] = nil
+            }
+            else if key.contains("v0,2")
+            {
+                flagsDict["Vintage \(key.replacingOccurrences(of: "(v0,2 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = flagsDict[key]
+                flagsDict[key] = nil
+            }
+        }
+        group.leave()
     }
     
     func nicknameSetup()
     {
         let nickname = "\(Words.adjectives[Int.random(in: 0 ..< Words.adjectives.count)])\(Words.nouns[Int.random(in: 0 ..< Words.nouns.count)])\(Int.random(in: 0 ..< 10000))"
-        ref.child("nicknames/\(nickname)").observeSingleEvent(of: .value, with: { [unowned self] (snapshot) in
-            
-            if snapshot.exists() && (snapshot.value as! Bool) == true  //username already exits
-            {
-                self.nicknameSetup()
-            }
-            else
-            {                   //username doesn't exist
-                self.username = nickname
-                self.ref.child("nicknames/\(nickname)").setValue(true)
-                self.ref.child("users/\(self.email!)/data/nickname").setValue(nickname)
-                self.hardLoad()
-            }
-            
-        }) { (error) in
-            NSLog(error.localizedDescription)
-        }
+        username = nickname
+        userDefaults.set(nickname, forKey: StorageKey.nickname)
+        hardLoad()
     }
 
     func addGameViews()
@@ -918,123 +917,42 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
     
     func loadDate(_ group: DispatchGroup! )
     {
-        ref.child("timestamp").setValue(ServerValue.timestamp(), withCompletionBlock: { (error, snapshot) in
-            self.ref.child("timestamp").observeSingleEvent(of: .value, with: { [unowned self]
-                snap in
-                if let t = snap.value as? TimeInterval {
-                    
-                    self.timestamp = snap.value as? Int
-                    let date = NSDate(timeIntervalSince1970: t/1000)
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateFormat = "yyyy-M-dd"
-                    self.dateString = dateFormatter.string(from: date as Date)
-                }
-                
-                if (group != nil)
-                {
-                    group.leave()
-                }
-                
-                NSLog("date loaded")
-            }) { (error) in
-                NSLog(error.localizedDescription)
-                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-            }
-        })
+        let now = Date()
+        timestamp = Int(now.timeIntervalSince1970 * 1000)
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-M-dd"
+        dateString = dateFormatter.string(from: now)
+        if (group != nil)
+        {
+            group.leave()
+        }
+        NSLog("date loaded")
     }
     
     func loadPlanetList( _ group: DispatchGroup)
     {
-        group.enter()
-        ref.child("planetList").observeSingleEvent(of: .value, with: { [unowned self]
-            snap in
-            self.planetList = snap.value as? [String]
-            group.leave()
-            NSLog("planet list loaded")
-        }) { (error) in
-            NSLog(error.localizedDescription)
-            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-        }
-        
-        ref.child("starList").observeSingleEvent(of: .value, with: { [unowned self]
-            snap in
-            self.starList = snap.value as? [String]
-            group.leave()
-            NSLog("planet list loaded")
-        }) { (error) in
-            NSLog(error.localizedDescription)
-            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-        }
+        planetList = planetDefinitions.map { $0.name }
+        starList = []
+        group.leave()
+        NSLog("planet list loaded")
     }
     
     func loadPlanets( _ callback: @escaping () -> () )
     {
-        let group = DispatchGroup()
-        
-        for planetString in self.planetList
+        for definition in planetDefinitions
         {
-            group.enter()
-            ref.child("planets").child(planetString).child("positions").child(dateString).observeSingleEvent(of: .value, with: { [unowned self]
-                snap in
-                let coordDict = snap.value as! [String: String]
-                self.ref.child("planets").child(planetString).child("values").observeSingleEvent(of: .value, with: { [unowned self]
-                    snap2 in
-                    
-                    let valueDict = snap2.value as! [String: Any]
-                    let visitorDict = valueDict["visitors"] as? [String : Bool] ?? [String : Bool]()
-                    let planet = Planet(name: planetString,
-                                        radius: valueDict["radius"] as! Double,
-                                        startingPlanet: valueDict["startingPlanet"] != nil,
-                                            x: Int(Double(coordDict["x"]!)! * coordMultiplier * AU),
-                                            y: Int(Double(coordDict["y"]!)! * coordMultiplier * AU),
-                                            color: valueDict["color"] != nil ? UIColor( valueDict["color"] as! String) : .moonColor,
-                                            type: valueDict["type"] as? String)
-                    
-                    self.planetDict[planet.name!] = planet
-                    planet.visitorCount = visitorDict.count
-                    group.leave()
-                    
-                }) { (error) in
-                    NSLog(error.localizedDescription)
-                    showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-                }
-                
-                
-            }) { (error) in
-                NSLog(error.localizedDescription)
-                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-            }
+            let x = Int(definition.xAU * coordMultiplier * AU)
+            let y = Int(definition.yAU * coordMultiplier * AU)
+            let planet = Planet(name: definition.name,
+                                radius: definition.radius,
+                                startingPlanet: definition.startingPlanet,
+                                x: x,
+                                y: y,
+                                color: definition.color,
+                                type: definition.type)
+            planetDict[definition.name] = planet
         }
-        
-        for starString in self.starList
-        {
-            group.enter()
-            ref.child("planets/\(starString)").observeSingleEvent(of: .value, with: { [unowned self]
-                snap in
-                let dict = snap.value as! [String: Any]
-                let star = Planet(name: starString,
-                                  radius: dict["radius"] as? Double ?? 100000,
-                                  x: Int(dict["x"] as! Double * coordMultiplier * parsec),
-                                  y: Int(dict["y"] as! Double * coordMultiplier * parsec),
-                                  color: dict["color"] != nil ? UIColor(dict["color"] as! String) : .yellow,
-                                  type: dict["type"] as? String ?? "Star")
-                
-                let valueDict = dict["values"] as? [String: Any] ?? [String : Any]()
-                let visitorDict = valueDict["visitors"] as? [String: Bool] ?? [String : Bool]()
-                star.visitorCount = visitorDict.count
-                self.planetDict[starString] = star
-                group.leave()
-                
-                
-            }) { (error) in
-                NSLog(error.localizedDescription)
-                showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
-            }
-        }
-        
-        group.notify(queue: .main) {
-            callback()
-        }
+        callback()
     }
     
     func drawObjects()
@@ -1061,7 +979,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                     coordinatesSet = true
                     positionX = planet.x
                     positionY = planet.y + Int(planet.radius) * Int(coordMultiplier)
-                    ref.child("users/\(email!)/data/coordinatesSet").setValue(true)
+                    userDefaults.set(true, forKey: StorageKey.coordinatesSet)
                     planet.position = CGPoint(x: rocket.position.x, y: rocket.position.y - CGFloat(planet.radius))
                     addVisitorToPlanet(planet.name!)
                     currentPlanet = planet
@@ -1106,65 +1024,53 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         {
             return
         }
-        
-        ref.child("users/\(email!)/position").setValue(
+
+        userDefaults.set(
             ["positionX" : positionX!,
              "positionY" : positionY!,
              "velocityX" : velocityX,
              "velocityY" : velocityY,
-             "timestamp": ServerValue.timestamp(),
-             "travelingTo" : travelingToName!,
-             "currentPlanet" : currentPlanetName!,
+             "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+             "travelingTo" : travelingToName as Any,
+             "currentPlanet" : currentPlanetName as Any,
              "velocity" : velocity,
              "nextSpeedBoostTime": nextSpeedBoostTime,
-             "willLandOnPlanetTime" : willLandOnPlanetTime])
+             "willLandOnPlanetTime" : willLandOnPlanetTime],
+            forKey: StorageKey.position)
     }
     
     func getPositionFromServer(_ group: DispatchGroup!)
     {
+        if let coordDict = userDefaults.dictionary(forKey: StorageKey.position)
+        {
+            velocity = coordDict["velocity"] as? Double ?? 0
+            positionX = coordDict["positionX"] as? Int
+            positionY = coordDict["positionY"] as? Int
+            velocityX = coordDict["velocityX"] as? Double ?? 0
+            velocityY = coordDict["velocityY"] as? Double ?? 0
+            travelingToName = coordDict["travelingTo"] as? String
+            currentPlanetName = coordDict["currentPlanet"] as? String
+            nextSpeedBoostTime = coordDict["nextSpeedBoostTime"] as? Int ?? Int.max
+            willLandOnPlanetTime = coordDict["willLandOnPlanetTime"] as? Int ?? Int.max
 
-        ref.child("users/\(email!)/position").observeSingleEvent(of: .value, with: { [unowned self]
-            snap in
-            
-            if (snap.exists())
+            if let oldTimestamp = coordDict["timestamp"] as? Int
             {
-                let coordDict = snap.value as! [String: Any]
-                
-                self.velocity = coordDict["velocity"] as? Double ?? 0
-                self.positionX = coordDict["positionX"] as? Int
-                self.positionY = coordDict["positionY"] as? Int
-                self.velocityX = coordDict["velocityX"] as? Double ?? 0
-                self.velocityY = coordDict["velocityY"] as? Double ?? 0
-                self.travelingToName = (coordDict["travelingTo"] as? String)!
-                self.currentPlanetName = (coordDict["currentPlanet"] as? String)
-                self.nextSpeedBoostTime = coordDict["nextSpeedBoostTime"] as? Int ?? Int.max
-                self.willLandOnPlanetTime = coordDict["willLandOnPlanetTime"] as? Int ?? Int.max
-
-                let oldTimestamp = coordDict["timestamp"] as! Int
-                let millisecondsElapsed = self.timestamp - oldTimestamp
+                let millisecondsElapsed = timestamp - oldTimestamp
                 NSLog("\(millisecondsElapsed) milliseconds since last load")
-                
-
-                if (self.timestamp > self.willLandOnPlanetTime) {
-                    self.positionX = 0
-                    self.positionY = 0
+                if (timestamp > willLandOnPlanetTime) {
+                    positionX = 0
+                    positionY = 0
                 }
-                
-                else {
-                    self.positionX += Int(self.velocityX / millisecondsPerHour * Double(millisecondsElapsed))
-                    self.positionY += Int(self.velocityY / millisecondsPerHour * Double(millisecondsElapsed))
+                else if let posX = positionX, let posY = positionY {
+                    positionX = posX + Int(velocityX / millisecondsPerHour * Double(millisecondsElapsed))
+                    positionY = posY + Int(velocityY / millisecondsPerHour * Double(millisecondsElapsed))
                 }
-                
             }
-            
-            if (group != nil)
-            {
-                group.leave()
-            }
+        }
 
-        }) { (error) in
-            NSLog(error.localizedDescription)
-            showAlertMessage((self.view?.window!.rootViewController)!, header: "Error", body: error.localizedDescription)
+        if (group != nil)
+        {
+            group.leave()
         }
     }
     

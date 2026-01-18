@@ -9,7 +9,6 @@
 import UIKit
 import SpriteKit
 import GameplayKit
-import Firebase
 
 class GameViewController: UIViewController {
     
