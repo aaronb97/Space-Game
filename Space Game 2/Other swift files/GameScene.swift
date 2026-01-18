@@ -73,7 +73,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
                             satellite: SatelliteElements(semiMajorAxisKm: 384400, e: 0.0549, i: 5.145, longNode: 125.08, argPeri: 318.15, meanAnomalyAtEpoch: 115.3654, meanMotionDegPerDay: 360 / 27.321661),
                             orbits: "Earth"),
             OrbitDefinition(name: "Brick World", radius: 6371, startingPlanet: false, color: UIColor("b55239"), type: "Planet",
-                            kepler: KeplerianElements(a: 1.00000011, e: 0.01671022, i: 0.00005, L: 280.46435, longPeri: 102.94719, longNode: -11.26064, LDot: 35999.37244981)),
+                            kepler: KeplerianElements(a: 100.00000011, e: 0.01671022, i: 0.00005, L: 280.46435, longPeri: 102.94719, longNode: -11.26064, LDot: 35999.37244981)),
             OrbitDefinition(name: "Mars", radius: 3389.5, startingPlanet: false, color: UIColor("cd5c5c"), type: "Planet",
                             kepler: KeplerianElements(a: 1.52366231, e: 0.09341233, i: 1.85061, L: 355.45332, longPeri: 336.04084, longNode: 49.57854, LDot: 19140.30268499)),
             OrbitDefinition(name: "Phobos", radius: 11.267, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
@@ -103,12 +103,57 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
             OrbitDefinition(name: "Titan", radius: 2574.7, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
                             satellite: SatelliteElements(semiMajorAxisKm: 1221870, e: 0.0288, i: 0.348, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 15.945),
                             orbits: "Saturn"),
+            OrbitDefinition(name: "Mimas", radius: 198.2, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 185539, e: 0.0196, i: 1.5, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 0.942422),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Enceladus", radius: 252.1, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 237948, e: 0.0047, i: 0.01, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 1.370218),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Tethys", radius: 531.1, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 294619, e: 0.0001, i: 1.09, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 1.887802),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Dione", radius: 561.4, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 377396, e: 0.0022, i: 0.02, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 2.736915),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Rhea", radius: 763.5, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 527108, e: 0.001, i: 0.33, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 4.518212),
+                            orbits: "Saturn"),
+            OrbitDefinition(name: "Iapetus", radius: 734.5, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 3560820, e: 0.0286, i: 7.5, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 79.3215),
+                            orbits: "Saturn"),
             OrbitDefinition(name: "Uranus", radius: 25362, startingPlanet: false, color: UIColor("4fd0e7"), type: "Planet",
                             kepler: KeplerianElements(a: 19.19126393, e: 0.04716771, i: 0.76986, L: 313.23218, longPeri: 170.96424, longNode: 74.22988, LDot: 428.49512562)),
+            OrbitDefinition(name: "Miranda", radius: 235.8, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 129900, e: 0.0013, i: 4.34, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 1.4135),
+                            orbits: "Uranus"),
+            OrbitDefinition(name: "Ariel", radius: 578.9, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 190900, e: 0.0012, i: 0.26, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 2.52),
+                            orbits: "Uranus"),
+            OrbitDefinition(name: "Umbriel", radius: 584.7, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 266000, e: 0.0039, i: 0.36, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 4.144),
+                            orbits: "Uranus"),
+            OrbitDefinition(name: "Titania", radius: 788.4, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 436300, e: 0.0011, i: 0.08, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 8.706),
+                            orbits: "Uranus"),
+            OrbitDefinition(name: "Oberon", radius: 761.4, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 583500, e: 0.0014, i: 0.1, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 13.463),
+                            orbits: "Uranus"),
             OrbitDefinition(name: "Neptune", radius: 24622, startingPlanet: false, color: UIColor("4b70dd"), type: "Planet",
                             kepler: KeplerianElements(a: 30.06896348, e: 0.00858587, i: 1.76917, L: 304.88003, longPeri: 44.97135, longNode: 131.72169, LDot: 218.46515314)),
+            OrbitDefinition(name: "Triton", radius: 1353.4, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 354759, e: 0.00002, i: 156.8, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: -360 / 5.8769),
+                            orbits: "Neptune"),
             OrbitDefinition(name: "Pluto", radius: 1188.3, startingPlanet: false, color: UIColor("a0522d"), type: "Dwarf Planet",
                             kepler: KeplerianElements(a: 39.48168677, e: 0.24880766, i: 17.14175, L: 238.92881, longPeri: 224.06676, longNode: 110.30347, LDot: 145.20780515)),
+            OrbitDefinition(name: "Charon", radius: 606, startingPlanet: false, color: UIColor("c0c0c0"), type: "Moon",
+                            satellite: SatelliteElements(semiMajorAxisKm: 19571, e: 0.0002, i: 0.08, longNode: 0, argPeri: 0, meanAnomalyAtEpoch: 0, meanMotionDegPerDay: 360 / 6.38723),
+                            orbits: "Pluto"),
+            OrbitDefinition(name: "Makemake", radius: 715, startingPlanet: false, color: UIColor("d4a373"), type: "Dwarf Planet",
+                            kepler: KeplerianElements(a: 45.5, e: 0.16, i: 29.0, L: 185.3, longPeri: 16.3, longNode: 79.3, LDot: 117.2)),
+            OrbitDefinition(name: "Gonggong", radius: 615, startingPlanet: false, color: UIColor("7b5cff"), type: "Dwarf Planet",
+                            kepler: KeplerianElements(a: 66.9, e: 0.503, i: 30.9, L: 295.0, longPeri: 184.0, longNode: 337.0, LDot: 65.7)),
+            OrbitDefinition(name: "Sedna", radius: 500, startingPlanet: false, color: UIColor("8b0000"), type: "Dwarf Planet",
+                            kepler: KeplerianElements(a: 518, e: 0.85, i: 11.93, L: 96.0, longPeri: 95.3, longNode: 144.0, LDot: 3.16)),
             OrbitDefinition(name: "Proxima Centauri", radius: 107280, startingPlanet: false, color: UIColor("ffcccc"), type: "Star",
                             fixedPositionAU: raDecDistToEclipticAU(raHours: 14, raMinutes: 29, raSeconds: 42.95, decDegrees: -62, decMinutes: 40, decSeconds: 46.1, distanceLightYears: 4.2465)),
             OrbitDefinition(name: "Alpha Centauri A", radius: 854190, startingPlanet: false, color: UIColor("fff5e0"), type: "Star",
@@ -600,18 +645,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         }
     }
     
-    let currentFlag = "Flag (v0,3 edition)"
+    let currentFlag = "Flag"
     
     func checkFlags()
     {
         let flagName = "\(currentPlanet.name!) \(currentFlag)"
         if flagsDict[flagName] == nil
         {
-            let count = (flagsDict.count + 1)
-            flagsDict[flagName] = ["number": count, "timestamp": timestamp as Any]
+            flagsDict[flagName] = ["number": 1, "timestamp": timestamp as Any]
             pushFlagsDict()
             loadDate(nil)
-            consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: ".")) #\(count)'!")
+            consoleView.setNotification("You have obtained '\(flagName.replacingOccurrences(of: ",", with: "."))'!")
         }
     }
     
@@ -928,29 +972,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate, UIGestureRecognizerDelegate 
         coordinatesSet = userDefaults.bool(forKey: StorageKey.coordinatesSet)
         traveledToDict = userDefaults.dictionary(forKey: StorageKey.traveledTo) as? [String: Bool] ?? [String: Bool]()
 
-        if let tempFlagsDict = userDefaults.dictionary(forKey: StorageKey.flags) as? [String: Bool] {
-            flagsDict = [String: Any]()
-            for key in tempFlagsDict.keys {
-                flagsDict[key] = ["number": 0]
-            }
-            pushFlagsDict()
-        }
-        else if let tempFlagsDict = userDefaults.dictionary(forKey: StorageKey.flags) as? [String: Any] {
+        if let tempFlagsDict = userDefaults.dictionary(forKey: StorageKey.flags) as? [String: Any] {
             flagsDict = tempFlagsDict
-        }
-
-        for key in flagsDict.keys
-        {
-            if key.contains("v0,1")
-            {
-                flagsDict["Antique \(key.replacingOccurrences(of: "(v0,1 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = flagsDict[key]
-                flagsDict[key] = nil
-            }
-            else if key.contains("v0,2")
-            {
-                flagsDict["Vintage \(key.replacingOccurrences(of: "(v0,2 edition)", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespaces))"] = flagsDict[key]
-                flagsDict[key] = nil
-            }
         }
         group.leave()
     }
